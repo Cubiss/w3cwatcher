@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 def name_color(r: int, g: int, b: int) -> str:
     """Return a coarse human-friendly color name for logging.
     Categories: black/white/gray/red/green/blue/yellow/cyan/magenta/unknown

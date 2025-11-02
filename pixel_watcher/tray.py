@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 import pystray
 
 from .config import Settings
-from .pixel_utils import calibrate_offsets
+from .utils import calibrate_offsets
 from .watcher import PixelWatcher
 
 

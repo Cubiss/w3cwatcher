@@ -1,7 +1,7 @@
 __all__ = [
     "config",
     "window_utils",
-    "pixel_utils",
+    "utils.py",
     "notifier",
     "color_names",
     "watcher",

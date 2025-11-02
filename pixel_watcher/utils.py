@@ -4,6 +4,7 @@ from PIL import ImageGrab
 import pyautogui
 import win32gui
 
+
 def get_pixel_screen_xy(hwnd: int, x_off: int, y_off: int) -> Tuple[int, int]:
     cx, cy = win32gui.ClientToScreen(hwnd, (0, 0))
     return cx + x_off, cy + y_off
@@ -28,3 +29,21 @@ def calibrate_offsets(hwnd: int) -> tuple[int, int]:
     xo, yo = mx - cx, my - cy
     print(f"[Calibrate] Suggested X_OFFSET={xo}, Y_OFFSET={yo}")
     return xo, yo
+
+
+def find_window_by_keyword(keyword: str):
+    keyword = keyword.lower()
+    matched_hwnd = None
+
+    def enum_handler(hwnd, _):
+        nonlocal matched_hwnd
+        if matched_hwnd is not None:
+            return  # already found, skip further checks
+
+        # Get window title
+        title = win32gui.GetWindowText(hwnd)
+        if keyword in title.lower() and win32gui.IsWindowVisible(hwnd):
+            matched_hwnd = hwnd
+
+    win32gui.EnumWindows(enum_handler, None)
+    return matched_hwnd

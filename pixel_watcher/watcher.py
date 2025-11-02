@@ -5,7 +5,7 @@ from .config import Settings
 from .window_utils import set_dpi_awareness, find_window_by_keyword, bring_to_foreground, point_belongs_to_window
 import win32gui
 import win32con
-from .pixel_utils import get_pixel_screen_xy, grab_pixel_rgb, within_tolerance
+from .utils import get_pixel_screen_xy, grab_pixel_rgb, within_tolerance
 from .notifier import send_discord_webhook
 from .color_names import name_color
 
@@ -78,7 +78,7 @@ class PixelWatcher:
                     self._last_sent_ts = now
 
                 self._was_in_queue = in_queue
-                time.sleep(period)
+                time.sleep(self.s.poll_s)
 
             except KeyboardInterrupt:
                 print("\n[+] Stopped by user.")

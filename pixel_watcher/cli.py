@@ -3,7 +3,7 @@ import argparse
 from .config import Settings, get_webhook_url
 from .watcher import PixelWatcher
 from .tray import TrayApp
-from .pixel_utils import calibrate_offsets
+from .utils import calibrate_offsets, find_window_by_keyword
 
 
 def parse_rgb(text: str) -> tuple[int, int, int]:
@@ -32,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--calibrate', action='store_true', help='Calibrate offsets and exit')
 
     return p
+
 
 def settings_from_args(args: argparse.Namespace) -> Settings:
     s = Settings()

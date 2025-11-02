@@ -7,6 +7,7 @@ import win32con
 # new helper to normalize hwnd to root
 GA_ROOT = win32con.GA_ROOT
 
+
 def set_dpi_awareness() -> None:
     try:
         ctypes.windll.user32.SetProcessDPIAware()
