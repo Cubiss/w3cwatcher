@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pixel-watcher"
+version = "0.1.0"
+description = "Watch a pixel in a window and notify via Discord when it changes."
+authors = [{ name = "Your Name" }]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pillow>=9.0",
+    "requests>=2.28",
+    "pyautogui>=0.9",
+    "pywin32>=306; platform_system == 'Windows'",
+    "pystray>=0.19; platform_system == 'Windows'",
+]
+
+[project.scripts]
+pixel-watcher = "pixel_watcher.cli:main"
+
+[tool.setuptools]
+packages = ["pixel_watcher"]
