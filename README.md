@@ -6,7 +6,7 @@ It checks for the color of the W3Champions match button and sends a discord noti
 
 ------------------------------------------------------------------------
 
-## 📦 Installation
+## Installation
 ``` bash
 pip install git+https://github.com/Cubiss/w3cwatcher.git
 ```
