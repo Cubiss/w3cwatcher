@@ -1,50 +1,41 @@
-import ctypes
-import sys
-import os
+# console_log.py
+import ctypes, sys, os
 from ctypes import wintypes
 
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
 user32   = ctypes.WinDLL("user32",   use_last_error=True)
 
-GetConsoleWindow       = kernel32.GetConsoleWindow
-AllocConsole           = kernel32.AllocConsole
-FreeConsole            = kernel32.FreeConsole
-SetConsoleTitleW       = kernel32.SetConsoleTitleW
-SetConsoleCtrlHandler  = kernel32.SetConsoleCtrlHandler
-ShowWindow             = user32.ShowWindow
-SetForegroundWindow    = user32.SetForegroundWindow
+GetConsoleWindow      = kernel32.GetConsoleWindow
+AllocConsole          = kernel32.AllocConsole
+FreeConsole           = kernel32.FreeConsole
+SetConsoleTitleW      = kernel32.SetConsoleTitleW
+SetConsoleCtrlHandler = kernel32.SetConsoleCtrlHandler
+ShowWindow            = user32.ShowWindow
+SetForegroundWindow   = user32.SetForegroundWindow
 
 SW_RESTORE = 9
-
-CTRL_C_EVENT        = 0
-CTRL_BREAK_EVENT    = 1
-CTRL_CLOSE_EVENT    = 2
-CTRL_LOGOFF_EVENT   = 5
-CTRL_SHUTDOWN_EVENT = 6
+CTRL_CLOSE_EVENT   = 2
+CTRL_LOGOFF_EVENT  = 5
+CTRL_SHUTDOWN_EVENT= 6
 
 HANDLER_ROUTINE = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
-_ctrl_handler_ref = None  # keep a ref so it isn't GC'd
+_handler_ref = None  # keep a reference so it doesn't get GC'd
 
 
-def _bind_streams_to_console():
-    # Rebind stdout/stderr to the console; line-buffered, tolerant encoding.
+def _bind_streams():
     sys.stdout = open("CONOUT$", "w", buffering=1, encoding="utf-8", errors="replace")
     sys.stderr = open("CONOUT$", "w", buffering=1, encoding="utf-8", errors="replace")
 
 
-def _unbind_streams_to_devnull():
-    # Flush/close current streams and point to NUL so prints won't crash after detach.
+def _unbind_streams():
     try:
         try:
-            sys.stdout.flush()
-            sys.stderr.flush()
+            sys.stdout.flush(); sys.stderr.flush()
         except Exception:
             pass
         try:
-            if getattr(sys.stdout, "closed", False) is False:
-                sys.stdout.close()
-            if getattr(sys.stderr, "closed", False) is False:
-                sys.stderr.close()
+            if not getattr(sys.stdout, "closed", True): sys.stdout.close()
+            if not getattr(sys.stderr, "closed", True): sys.stderr.close()
         except Exception:
             pass
     finally:
@@ -53,23 +44,24 @@ def _unbind_streams_to_devnull():
 
 
 def _detach_console():
-    _unbind_streams_to_devnull()
+    _unbind_streams()
     FreeConsole()
 
 
 @HANDLER_ROUTINE
 def _console_ctrl_handler(ctrl_type):
+    # Detach (and keep app alive) if the console is being closed/logged off/shut down.
     if ctrl_type in (CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT):
         _detach_console()
-        return True  # tell Windows we handled it
+        return True
     return False
 
 
-def _ensure_ctrl_handler():
-    global _ctrl_handler_ref
-    if _ctrl_handler_ref is None:
-        _ctrl_handler_ref = _console_ctrl_handler
-        if not SetConsoleCtrlHandler(_ctrl_handler_ref, True):
+def _ensure_handler_installed():
+    global _handler_ref
+    if _handler_ref is None:
+        _handler_ref = _console_ctrl_handler
+        if not SetConsoleCtrlHandler(_handler_ref, True):
             raise ctypes.WinError(ctypes.get_last_error())
 
 
@@ -78,34 +70,25 @@ def is_console_open() -> bool:
 
 
 def open_console(title: str = "PixelWatcher Log", bring_to_front: bool = True):
-    """
-    Ensure a console exists, attach stdout/stderr, and register a close handler
-    so closing the console window doesn't kill the app.
-    """
+    # Install handler early so it’s in place even if the user closes fast.
+    _ensure_handler_installed()
+
     hwnd = GetConsoleWindow()
     if not hwnd:
-        # Create a new console and wire up streams & handler.
         if not AllocConsole():
             raise ctypes.WinError(ctypes.get_last_error())
         SetConsoleTitleW(title)
-        _bind_streams_to_console()
-        _ensure_ctrl_handler()
+        _bind_streams()
         hwnd = GetConsoleWindow()
 
     if bring_to_front and hwnd:
         ShowWindow(hwnd, SW_RESTORE)
         SetForegroundWindow(hwnd)
 
+    print("Your log is here.")
     return hwnd
 
 
 def close_console():
-    """Manually detach from the console (safe to call even if none is open)."""
     if is_console_open():
         _detach_console()
-
-
-# --- Optional demo
-if __name__ == "__main__":
-    open_console()
-    print("Test line. Close the console window and the process will keep running.")
