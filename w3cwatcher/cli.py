@@ -3,7 +3,7 @@ import argparse
 import ctypes
 from .config import Settings, load_user_config, open_user_config, config_file_path
 from .watcher import PixelWatcher
-from .tray import TrayApp
+from .tray import TrayApp, create_tray_shortcut
 
 
 def parse_rgb(text: str) -> tuple[int, int, int]:
