@@ -59,6 +59,7 @@ class PixelWatcher:
                         print(f"[skip] ({sx},{sy}) could not check pixel ownership:")
                         print(ex)
 
+                    self._was_in_queue = False
                     time.sleep(self.s.poll_s)
                     continue
 
