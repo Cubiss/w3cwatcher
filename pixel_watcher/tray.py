@@ -83,8 +83,6 @@ class TrayApp:
 
 
     def _log(self, _):
-        # If already has console do nothing
-        # Bring console to front
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()
         if not hwnd:
             ctypes.windll.kernel32.AllocConsole()
