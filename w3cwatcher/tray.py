@@ -8,7 +8,7 @@ import pystray
 from pathlib import Path
 import win32com.client
 
-from .config import Settings, open_user_config
+from .config import Settings, open_user_config, APP_NAME
 from .watcher import PixelWatcher
 
 
@@ -20,7 +20,7 @@ class TrayApp:
         self._icon_red = self._icon_image(color=(200, 60, 60))
         self._icon_green = self._icon_image(color=(60, 200, 60))
 
-        self._icon = pystray.Icon("PixelWatcher", self._icon_red, "Pixel Watcher")
+        self._icon = pystray.Icon(APP_NAME, self._icon_red, APP_NAME)
         self._worker: Optional[threading.Thread] = None
         self._watcher: Optional[PixelWatcher] = None
 
@@ -97,7 +97,7 @@ class TrayApp:
         hwnd = ctypes.windll.kernel32.GetConsoleWindow()
         if not hwnd:
             ctypes.windll.kernel32.AllocConsole()
-            ctypes.windll.kernel32.SetConsoleTitleW("PixelWatcher Log")
+            ctypes.windll.kernel32.SetConsoleTitleW(APP_NAME)
 
             # Redirect stdout & stderr
             sys.stdout = open("CONOUT$", "w", buffering=1)
