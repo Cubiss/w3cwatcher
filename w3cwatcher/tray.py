@@ -9,7 +9,6 @@ from pathlib import Path
 import win32com.client
 
 from .config import Settings, open_user_config
-from .console_utils import open_console
 from .watcher import PixelWatcher
 
 
@@ -90,11 +89,27 @@ class TrayApp:
         self._watcher = PixelWatcher(self.s, check_only=True)
         self._worker = threading.Thread(target=run_and_reset, daemon=True)
         self._worker.start()
+
         self._icon.icon = self._icon_green
 
 
     def _log(self, _):
-        open_console()
+        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if not hwnd:
+            ctypes.windll.kernel32.AllocConsole()
+            ctypes.windll.kernel32.SetConsoleTitleW("PixelWatcher Log")
+
+            # Redirect stdout & stderr
+            sys.stdout = open("CONOUT$", "w", buffering=1)
+            sys.stderr = open("CONOUT$", "w", buffering=1)
+            hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+
+        SW_RESTORE = 9
+        ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+        ctypes.windll.user32.SetForegroundWindow(hwnd)
+
+        print('Your log is here.')
+        return
 
     def _settings(self, _):
         # Open the user config file in the default editor
