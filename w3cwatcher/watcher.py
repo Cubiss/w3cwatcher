@@ -2,11 +2,11 @@ from __future__ import annotations
 import time
 from typing import Optional
 from .config import Settings
-from .window_utils import set_dpi_awareness, find_window_by_keyword, bring_to_foreground, point_belongs_to_window, \
-    get_window_image, draw_rectangle
+from .window_utils import (set_dpi_awareness, find_window_by_keyword, point_belongs_to_window,
+                           get_window_image, draw_rectangle)
 import win32gui
 import win32con
-from .utils import get_pixel_screen_xy, grab_pixel_rgb, within_tolerance
+from .utils import get_pixel_screen_xy, grab_pixel_rgb
 from .notifier import send_discord_webhook
 from .color_names import name_color
 from .config import config_file_path
