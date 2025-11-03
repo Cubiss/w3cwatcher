@@ -40,8 +40,14 @@ class TrayApp:
     def _start(self, _):
         if self._worker and self._worker.is_alive():
             return
+
+        # wrapper so we know when finished
+        def run_and_reset():
+            self._watcher.run()  # run check
+            self._icon.icon = self._icon_red  # back to red when done
+
         self._watcher = PixelWatcher(self.s)
-        self._worker = threading.Thread(target=self._watcher.run, daemon=True)
+        self._worker = threading.Thread(target=run_and_reset, daemon=True)
         self._worker.start()
 
         # set icon green
@@ -78,18 +84,22 @@ class TrayApp:
 
     def _log(self, _):
         # If already has console do nothing
-        if ctypes.windll.kernel32.GetConsoleWindow():
-            return
+        # Bring console to front
+        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if not hwnd:
+            ctypes.windll.kernel32.AllocConsole()
+            ctypes.windll.kernel32.SetConsoleTitleW("PixelWatcher Log")
 
-        ctypes.windll.kernel32.AllocConsole()
-        ctypes.windll.kernel32.SetConsoleTitleW("PixelWatcher Log")
+            # Redirect stdout & stderr
+            sys.stdout = open("CONOUT$", "w", buffering=1)
+            sys.stderr = open("CONOUT$", "w", buffering=1)
 
-        # Redirect stdout & stderr
-        sys.stdout = open("CONOUT$", "w", buffering=1)
-        sys.stderr = open("CONOUT$", "w", buffering=1)
+        SW_RESTORE = 9
+        ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
+        ctypes.windll.user32.SetForegroundWindow(hwnd)
 
-        print("=== PixelWatcher Log ===")
-        print("Console attached. Output will appear here.")
+        print('Your log is here.')
+        return
 
 
     def run(self):
