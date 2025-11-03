@@ -3,7 +3,6 @@ import ctypes
 from typing import Optional, Tuple, Union
 import win32gui
 import win32con
-import ctypes
 from PIL import ImageGrab, Image, ImageDraw
 
 from w3cwatcher.utils import get_relevant_rectangle

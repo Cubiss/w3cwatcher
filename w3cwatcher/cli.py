@@ -1,9 +1,9 @@
 from __future__ import annotations
 import argparse
+import ctypes
 from .config import Settings, load_user_config, open_user_config, config_file_path
 from .watcher import PixelWatcher
 from .tray import TrayApp
-from .utils import find_window_by_keyword
 
 
 def parse_rgb(text: str) -> tuple[int, int, int]:
@@ -50,6 +50,13 @@ def load_settings(args: argparse.Namespace) -> Settings:
         s.discord_webhook_url = args.webhook
     return s
 
+def detach_console():
+    # Only detach if we currently have a console
+    try:
+        ctypes.windll.kernel32.FreeConsole()
+    except Exception:
+        pass
+
 
 def main():
     parser = build_parser()
@@ -62,6 +69,7 @@ def main():
     elif args.check:
         PixelWatcher(s, check_only=True).run()
     elif args.tray:
+        detach_console()
         app = TrayApp(s)
         app.run()
     else:

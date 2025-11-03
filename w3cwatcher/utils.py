@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import Tuple
 from PIL import ImageGrab
-import pyautogui
 import win32gui
 
 
