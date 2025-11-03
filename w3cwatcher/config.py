@@ -39,7 +39,7 @@ def _config_file_dir() -> Path:
     return Path(user_config_dir(APP_NAME, appauthor=False))
 
 
-def _config_file_path() -> Path:
+def config_file_path() -> Path:
     return _config_file_dir() / "config.json"
 
 
@@ -69,7 +69,7 @@ def _coerce_types_into_settings(data: Dict[str, Any]) -> Settings:
 def ensure_user_config() -> Path:
     cfg_dir = _config_file_dir()
     cfg_dir.mkdir(parents=True, exist_ok=True)
-    cfg_file = _config_file_path()
+    cfg_file = config_file_path()
 
     if not cfg_file.exists():
         defaults = asdict(Settings())
@@ -82,7 +82,7 @@ def load_user_config(create_if_missing: bool = True) -> Settings:
     if create_if_missing:
         ensure_user_config()
 
-    cfg_file = _config_file_path()
+    cfg_file = config_file_path()
     loaded: Dict[str, Any] = {}
     if cfg_file.exists():
         try:

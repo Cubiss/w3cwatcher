@@ -1,36 +1,53 @@
-# Pixel Watcher
+# W3C Watcher
 
-A small Windows utility that watches a specific pixel inside a target window's **client area** and triggers a Discord webhook when a match condition is met. Includes:
+W3C Watcher is a lightweight background pixel-monitoring utility for
+Windows.\
+It checks for the color of the W3Champions match button and sends a discord notification when it detects change from in-queue to not-in-queue. 
 
-- Installable Python package (pip/pyproject)
-- Command-line interface with flags
-- System tray app (Windows) with start/stop and calibrate
-- Simple color name helper for log readability
+------------------------------------------------------------------------
 
-## Install (dev)
-```bash
-pip install -e .
+## 📦 Installation
+``` bash
+pip install git+https://github.com/Cubiss/w3cwatcher.git
 ```
 
-## CLI examples
-```bash
-# Run with defaults from config
-pixel-watcher
+------------------------------------------------------------------------
 
-# Override offsets and target
-pixel-watcher --x 0.755 --y 0.935 --target 117,12,16 --tol 15 --title W3Champions
+## Usage
 
-# Fire only on change and set debounce to 30s
-pixel-watcher --change-only --debounce 30
+### GUI / Tray Mode
+
+Run normally to start the tray watcher:
+
+``` bash
+w3cwatcher --tray
 ```
 
-## Tray app
-```bash
-pixel-watcher --tray
+Right-click the tray icon to configure:
+-   Start - starts monitoring (Icon turns green if successful)  
+-   Stop - stops monitoring
+-   Tools/Check - opens image showing what w3champion sees  
+-   Tools/Log - opens log console
+-   Tools/Settings -opens settings file
+
+### CLI Mode
+
+``` bash
+usage: w3cwatcher [-h] [--title TITLE] [--x X] [--y Y] [--poll POLL] [--debounce DEBOUNCE] [--message MESSAGE]
+                  [--webhook WEBHOOK] [--tray] [--check] [--config]
+
+Watch a pixel in a window and notify via Discord
+
+options:
+  -h, --help           show this help message and exit
+  --title TITLE        Substring to match target window title
+  --x X                Client X offset (0.5 = middle, 1.0 = left)
+  --y Y                Client Y offset (0.5 = middle), 1.0 = bottom
+  --poll POLL          Polling rate (s)
+  --debounce DEBOUNCE  Minimum seconds between webhooks
+  --message MESSAGE    Discord message content
+  --webhook WEBHOOK    Discord webhook URL (overrides env/file)
+  --tray               Run as a system tray app
+  --check              Check currently captured rectangle
+  --config             Opens config file
 ```
-
-Environment variables:
-- `DISCORD_WEBHOOK_URL` — webhook URL (or put plaintext at `~/webhook`)
-
-## Notes
-- Coordinates are *client* offsets; use **Calibrate** from the tray or `--calibrate` in CLI.

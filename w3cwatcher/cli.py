@@ -1,6 +1,6 @@
 from __future__ import annotations
 import argparse
-from .config import Settings, load_user_config
+from .config import Settings, load_user_config, open_user_config, config_file_path
 from .watcher import PixelWatcher
 from .tray import TrayApp
 from .utils import find_window_by_keyword
@@ -24,10 +24,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--poll', type=int, default=None, help='Polling rate (s)')
     p.add_argument('--debounce', type=int, default=None, help='Minimum seconds between webhooks')
     p.add_argument('--message', default=None, help='Discord message content')
-    p.add_argument('--webhook', default=None, help='Discord webhook URL (overrides env/file)')
-    p.add_argument('--tray', action='store_true', help='Run as a Windows system tray app')
-    p.add_argument('--calibrate', action='store_true', help='Calibrate offsets and exit')
+    p.add_argument('--webhook', default=None, help='Discord webhook URL')
+    p.add_argument('--tray', action='store_true', help='Run as a system tray app')
     p.add_argument('--check', action='store_true', help='Check currently captured rectangle')
+    p.add_argument('--config', action='store_true', help='Opens config file')
 
     return p
 
@@ -56,7 +56,10 @@ def main():
     args = parser.parse_args()
     s = load_settings(args)
 
-    if args.check:
+    if args.config:
+        print(config_file_path())
+        open_user_config()
+    elif args.check:
         PixelWatcher(s, check_only=True).run()
     elif args.tray:
         app = TrayApp(s)
