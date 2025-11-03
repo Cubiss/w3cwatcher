@@ -3,12 +3,13 @@ import os
 from dataclasses import dataclass
 
 DEFAULT_WINDOW_TITLE_KEYWORD = "W3Champions"
-DEFAULT_X_OFFSET = 1960
-DEFAULT_Y_OFFSET = 1358
+DEFAULT_X_OFFSET_PCT = 0.755
+DEFAULT_Y_OFFSET_PCT = 0.955
 DEFAULT_POLL_S = 5
-DEFAULT_DEBOUNCE_SECONDS = 30
+DEFAULT_DEBOUNCE_SECONDS = 60
 DEFAULT_DISCORD_MESSAGE = "Match found!"
 DEFAULT_IN_QUEUE_COLOR = "red"
+DEFAULT_INNER_RECTANGLE_ASPECT_RATIO = 1846 / 1040
 
 
 def get_webhook_url() -> str:
@@ -26,11 +27,11 @@ def get_webhook_url() -> str:
 @dataclass
 class Settings:
     window_title_keyword: str = DEFAULT_WINDOW_TITLE_KEYWORD
-    x_offset: int = DEFAULT_X_OFFSET
-    y_offset: int = DEFAULT_Y_OFFSET
+    x_offset_pct: float = DEFAULT_X_OFFSET_PCT
+    y_offset_pct: float = DEFAULT_Y_OFFSET_PCT
     in_queue_color: str = DEFAULT_IN_QUEUE_COLOR
     poll_s: int = DEFAULT_POLL_S
     debounce_seconds: int = DEFAULT_DEBOUNCE_SECONDS
     discord_message: str = DEFAULT_DISCORD_MESSAGE
     webhook_url: str = get_webhook_url()
-
+    inner_rectangle_aspect_ratio: float = DEFAULT_INNER_RECTANGLE_ASPECT_RATIO

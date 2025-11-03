@@ -2,7 +2,8 @@ from __future__ import annotations
 import time
 from typing import Optional
 from .config import Settings
-from .window_utils import set_dpi_awareness, find_window_by_keyword, bring_to_foreground, point_belongs_to_window
+from .window_utils import set_dpi_awareness, find_window_by_keyword, bring_to_foreground, point_belongs_to_window, \
+    get_window_image, draw_rectangle
 import win32gui
 import win32con
 from .utils import get_pixel_screen_xy, grab_pixel_rgb, within_tolerance
@@ -11,11 +12,12 @@ from .color_names import name_color
 
 
 class PixelWatcher:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, check_only: bool = False):
         self.s = settings
         self._stop = False
         self._was_in_queue: Optional[bool] = False
         self._last_sent_ts: float = 0.0
+        self.check_only = check_only
 
     def stop(self):
         self._stop = True
@@ -34,19 +36,21 @@ class PixelWatcher:
 
         print(
             f"[i] Monitoring '{self.s.window_title_keyword}' at offsets "
-            f"({self.s.x_offset}, {self.s.y_offset}) for Color≈{self.s.in_queue_color} ..."
+            f"({self.s.x_offset_pct}, {self.s.y_offset_pct}) for In Queue Color = {self.s.in_queue_color} ..."
         )
 
         while not self._stop:
             try:
-                sx, sy = get_pixel_screen_xy(hwnd, self.s.x_offset, self.s.y_offset)
+                (sx, sy), (x_off, y_off) = get_pixel_screen_xy(hwnd, self.s.x_offset_pct, self.s.y_offset_pct,
+                                             self.s.inner_rectangle_aspect_ratio)
                 # verify pixel belongs to window
                 if not point_belongs_to_window(hwnd, sx, sy):
                     try:
                         under = win32gui.WindowFromPoint((sx, sy))
                         title = win32gui.GetWindowText(win32gui.GetAncestor(under, win32con.GA_ROOT))
                         print(f"[skip] ({sx},{sy}) belongs to '{title}', not target window")
-                    except Exception:
+                    except Exception as ex:
+                        print(ex)
                         print(f"[skip] ({sx},{sy}) not on target window")
                     time.sleep(self.s.poll_s)
                     continue
@@ -59,6 +63,17 @@ class PixelWatcher:
 
                 print(f"RGB={rgb} ({color_name}) -> in_queue={in_queue}")
 
+                if self.check_only:
+                    img = get_window_image(hwnd, self.s.inner_rectangle_aspect_ratio)
+                    img = draw_rectangle(img, (x_off, y_off), size=10, outline='red', width=2)
+                    img = draw_rectangle(img, (x_off, y_off), size=30, outline='blue', width=4)
+                    img = draw_rectangle(img, (x_off, y_off), size=60, outline='yellow', width=8)
+                    print(f'size = {img.size}')
+                    print(f'pos = {(x_off, y_off)}')
+                    img.show()
+                    self.check_only = False
+                    return
+
                 now = time.time()
                 should_notify = False
 
@@ -68,7 +83,7 @@ class PixelWatcher:
                 if should_notify and now - self._last_sent_ts >= self.s.debounce_seconds:
                     embed = {
                         "title": "Pixel Watch Trigger",
-                        "description": f"Pixel at offsets ({self.s.x_offset}, {self.s.y_offset}) matched target.",
+                        "description": f"Pixel at offsets ({self.s.x_offset_pct}, {self.s.y_offset_pct}) matched target.",
                         "fields": [
                             {"name": "Observed RGB", "value": str(rgb), "inline": True},
                             {"name": "Approx Color", "value": color_name, "inline": True},
@@ -85,4 +100,4 @@ class PixelWatcher:
                 break
             except Exception as e:
                 print(f"[!] Error: {e}")
-                time.sleep(0.5)
+                time.sleep(self.s.poll_s)

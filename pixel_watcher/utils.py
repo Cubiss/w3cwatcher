@@ -5,9 +5,22 @@ import pyautogui
 import win32gui
 
 
-def get_pixel_screen_xy(hwnd: int, x_off: int, y_off: int) -> Tuple[int, int]:
+def get_pixel_screen_xy(hwnd: int, x_pct: float, y_pct: float, aspect_ratio: float) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    # Get client rect relative to client area (0,0)-(width,height)
+    rect = win32gui.GetClientRect(hwnd)
+    left, top, right, bottom = get_relevant_rectangle(rect, aspect_ratio)
+
+    width = right - left
+    height = bottom - top
+
+    # Convert percent offset to client pixel positions
+    x_off = int(width * x_pct)
+    y_off = int(height * y_pct)
+
+    # Convert to screen coordinates
     cx, cy = win32gui.ClientToScreen(hwnd, (0, 0))
-    return cx + x_off, cy + y_off
+    return (cx + x_off, cy + y_off), (x_off, y_off)
+
 
 
 def grab_pixel_rgb(screen_x: int, screen_y: int) -> Tuple[int, int, int]:
@@ -19,16 +32,6 @@ def grab_pixel_rgb(screen_x: int, screen_y: int) -> Tuple[int, int, int]:
 
 def within_tolerance(rgb: Tuple[int, int, int], target: Tuple[int, int, int], tol: int) -> bool:
     return all(abs(a - b) <= tol for a, b in zip(rgb, target))
-
-
-def calibrate_offsets(hwnd: int) -> tuple[int, int]:
-    print("\n[Calibrate] Focus the target window. Move your mouse to the pixel and press ENTER here...")
-    input()
-    mx, my = pyautogui.position()
-    cx, cy = win32gui.ClientToScreen(hwnd, (0, 0))
-    xo, yo = mx - cx, my - cy
-    print(f"[Calibrate] Suggested X_OFFSET={xo}, Y_OFFSET={yo}")
-    return xo, yo
 
 
 def find_window_by_keyword(keyword: str):
@@ -47,3 +50,25 @@ def find_window_by_keyword(keyword: str):
 
     win32gui.EnumWindows(enum_handler, None)
     return matched_hwnd
+
+def get_relevant_rectangle(
+    rect: Tuple[int, int, int, int],
+    aspect_ratio: float
+) -> Tuple[int, int, int, int]:
+    left, top, right, bottom = rect
+
+    width  = right - left
+    height = bottom - top
+
+    current_ratio = width / height
+
+    if current_ratio > aspect_ratio:
+        # Too wide — trim right side instead of left
+        new_width = int(height * aspect_ratio)
+        new_right = left + new_width
+        return left, top, new_right, bottom
+    else:
+        # Too tall — trim bottom
+        new_height = int(width / aspect_ratio)
+        new_bottom = top + new_height
+        return left, top, right, new_bottom

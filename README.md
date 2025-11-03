@@ -18,7 +18,7 @@ pip install -e .
 pixel-watcher
 
 # Override offsets and target
-pixel-watcher --x 1960 --y 1358 --target 117,12,16 --tol 15 --title W3Champions
+pixel-watcher --x 0.755 --y 0.935 --target 117,12,16 --tol 15 --title W3Champions
 
 # Fire only on change and set debounce to 30s
 pixel-watcher --change-only --debounce 30
