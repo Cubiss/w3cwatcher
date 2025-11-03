@@ -28,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--tray', action='store_true', help='Run as a system tray app')
     p.add_argument('--check', action='store_true', help='Check currently captured rectangle')
     p.add_argument('--config', action='store_true', help='Opens config file')
+    p.add_argument('--shortcut', action='store_true', help='Creates a desktop shortcut')
 
     return p
 
@@ -67,6 +68,10 @@ def main():
     if args.config:
         print(config_file_path())
         open_user_config()
+    elif args.shortcut:
+        print(config_file_path())
+        create_tray_shortcut()
+
     elif args.check:
         PixelWatcher(s, check_only=True).run()
     elif args.tray:

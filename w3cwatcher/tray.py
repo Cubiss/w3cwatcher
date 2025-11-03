@@ -5,6 +5,8 @@ import threading
 from typing import Optional
 from PIL import Image, ImageDraw
 import pystray
+from pathlib import Path
+import win32com.client
 
 from .config import Settings, open_user_config
 from .watcher import PixelWatcher
@@ -115,3 +117,30 @@ class TrayApp:
 
     def run(self):
         self._icon.run()
+
+def create_tray_shortcut():
+    # Use the real Desktop path from the Shell
+    shell = win32com.client.Dispatch("WScript.Shell")
+    desktop = Path(shell.SpecialFolders("Desktop"))
+
+    shortcut_path = desktop / "PixelWatcher (Tray).lnk"
+
+    # Prefer pythonw.exe (same dir as the current interpreter if available)
+    exe = Path(sys.executable)
+    pythonw = exe if exe.name.lower() == "pythonw.exe" else exe.with_name("pythonw.exe")
+    if not pythonw.exists():
+        pythonw = exe
+
+    arguments = "-m w3cwatcher --tray"
+    working_dir = Path.cwd()
+
+    shortcut = shell.CreateShortcut(str(shortcut_path))
+    shortcut.Targetpath = str(pythonw)
+    shortcut.Arguments = arguments
+    shortcut.WorkingDirectory = str(working_dir)
+    shortcut.IconLocation = str(pythonw)
+    shortcut.Description = "Launch PixelWatcher in tray mode"
+    shortcut.Save()
+
+    print(f"Created desktop shortcut: {shortcut_path}")
+    return str(shortcut_path)
