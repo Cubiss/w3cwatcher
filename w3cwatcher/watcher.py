@@ -9,7 +9,7 @@ import win32con
 from .utils import get_pixel_screen_xy, grab_pixel_rgb, within_tolerance
 from .notifier import send_discord_webhook
 from .color_names import name_color
-
+from .config import config_file_path
 
 class PixelWatcher:
     def __init__(self, settings: Settings, check_only: bool = False):
@@ -26,7 +26,7 @@ class PixelWatcher:
         set_dpi_awareness()
 
         if not self.s.discord_webhook_url:
-            print("[!] No webhook URL. Set DISCORD_WEBHOOK_URL or put it in ~/webhook.")
+            print(f"[!] No webhook URL. Put it in {config_file_path()}")
             return
 
         hwnd = find_window_by_keyword(self.s.window_title_keyword)
