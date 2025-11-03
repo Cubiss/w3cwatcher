@@ -54,7 +54,8 @@ def detach_console():
     # Only detach if we currently have a console
     try:
         ctypes.windll.kernel32.FreeConsole()
-    except Exception:
+    except Exception as ex:
+        print('Detach failed: ', ex)
         pass
 
 
