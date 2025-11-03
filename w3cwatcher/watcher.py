@@ -88,6 +88,7 @@ class PixelWatcher:
                     should_notify = True
 
                 if should_notify and now - self._last_sent_ts >= self.s.debounce_seconds:
+                    print('Sending notification.')
                     embed = {
                         "title": "Pixel Watch Trigger",
                         "description": f"Pixel at offsets ({self.s.x_offset_pct}, {self.s.y_offset_pct}) matched target.",
