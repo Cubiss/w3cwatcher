@@ -26,15 +26,15 @@ w3cwatcher --tray
 Right-click the tray icon to configure:
 -   Start - starts monitoring (Icon turns green if successful)  
 -   Stop - stops monitoring
--   Tools/Check - opens image showing what w3champion sees  
+-   Tools/Check - opens image showing what W3CWatcher sees  
 -   Tools/Log - opens log console
--   Tools/Settings -opens settings file
+-   Tools/Settings - opens settings file
 
 ### CLI Mode
 
 ``` bash
-usage: w3cwatcher [-h] [--title TITLE] [--x X] [--y Y] [--poll POLL] [--debounce DEBOUNCE] [--message MESSAGE]
-                  [--webhook WEBHOOK] [--tray] [--check] [--config]
+usage: w3cwatcher [-h] [--title TITLE] [--x X] [--y Y] [--poll POLL] [--debounce DEBOUNCE] [--message MESSAGE] [--webhook WEBHOOK] [--tray]
+                  [--check] [--config] [--shortcut]
 
 Watch a pixel in a window and notify via Discord
 
@@ -46,10 +46,11 @@ options:
   --poll POLL          Polling rate (s)
   --debounce DEBOUNCE  Minimum seconds between webhooks
   --message MESSAGE    Discord message content
-  --webhook WEBHOOK    Discord webhook URL (overrides env/file)
+  --webhook WEBHOOK    Discord webhook URL
   --tray               Run as a system tray app
   --check              Check currently captured rectangle
   --config             Opens config file
+  --shortcut           Creates a desktop shortcut
 ```
 
 ## Setup a Discord webhook
