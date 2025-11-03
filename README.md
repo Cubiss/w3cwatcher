@@ -51,3 +51,32 @@ options:
   --check              Check currently captured rectangle
   --config             Opens config file
 ```
+
+## Setup a Discord webhook
+
+1.  Open **Discord**
+2.  Go to the server and **select the channel**
+3.  Click the channel name → **Integrations**
+    -   (Alternate) Right‑click channel → **Edit Channel** →
+        **Integrations**
+4.  Click **Webhooks**
+5.  Click **New Webhook**
+6.  Name it and pick the channel
+7.  Click **Copy Webhook URL**
+8.  Run `w3cwatcher --settings` or click `Tools/Settings` in Tray context menu
+9.  Paste your url into `discord_webhook_url` field
+
+The config file should look like this:
+```json
+{
+  "window_title_keyword": "W3Champions",
+  "x_offset_pct": 0.755,
+  "y_offset_pct": 0.955,
+  "in_queue_color": "red",
+  "poll_s": 5,
+  "debounce_seconds": 60,
+  "discord_message": "Match found!",
+  "discord_webhook_url": "https://discord.com/api/webhooks/<webhook_id>/<webhook_token>",
+  "inner_rectangle_aspect_ratio": 1.775
+}
+```
