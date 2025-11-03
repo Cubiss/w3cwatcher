@@ -25,7 +25,7 @@ class PixelWatcher:
     def run(self):
         set_dpi_awareness()
 
-        if not self.s.webhook_url:
+        if not self.s.discord_webhook_url:
             print("[!] No webhook URL. Set DISCORD_WEBHOOK_URL or put it in ~/webhook.")
             return
 
@@ -43,15 +43,22 @@ class PixelWatcher:
             try:
                 (sx, sy), (x_off, y_off) = get_pixel_screen_xy(hwnd, self.s.x_offset_pct, self.s.y_offset_pct,
                                              self.s.inner_rectangle_aspect_ratio)
+
+                if (sx, sy) == (0, 0):
+                    print(f'{self.s.window_title_keyword} window is not visible.')
+                    time.sleep(self.s.poll_s)
+                    continue
+
                 # verify pixel belongs to window
                 if not point_belongs_to_window(hwnd, sx, sy):
                     try:
                         under = win32gui.WindowFromPoint((sx, sy))
                         title = win32gui.GetWindowText(win32gui.GetAncestor(under, win32con.GA_ROOT))
-                        print(f"[skip] ({sx},{sy}) belongs to '{title}', not target window")
+                        print(f"[skip] ({sx},{sy}) belongs to '{title}', not {self.s.window_title_keyword}")
                     except Exception as ex:
+                        print(f"[skip] ({sx},{sy}) could not check pixel ownership:")
                         print(ex)
-                        print(f"[skip] ({sx},{sy}) not on target window")
+
                     time.sleep(self.s.poll_s)
                     continue
 
@@ -89,7 +96,7 @@ class PixelWatcher:
                             {"name": "Approx Color", "value": color_name, "inline": True},
                         ],
                     }
-                    send_discord_webhook(self.s.webhook_url, self.s.discord_message, embed_fields=embed)
+                    send_discord_webhook(self.s.discord_webhook_url, self.s.discord_message, embed_fields=embed)
                     self._last_sent_ts = now
 
                 self._was_in_queue = in_queue

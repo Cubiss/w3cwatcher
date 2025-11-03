@@ -8,6 +8,10 @@ import win32gui
 def get_pixel_screen_xy(hwnd: int, x_pct: float, y_pct: float, aspect_ratio: float) -> Tuple[Tuple[int, int], Tuple[int, int]]:
     # Get client rect relative to client area (0,0)-(width,height)
     rect = win32gui.GetClientRect(hwnd)
+
+    if rect == (0,0,0,0):
+        return (0,0), (0,0)
+
     left, top, right, bottom = get_relevant_rectangle(rect, aspect_ratio)
 
     width = right - left

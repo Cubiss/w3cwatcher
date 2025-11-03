@@ -6,7 +6,7 @@ import win32con
 import ctypes
 from PIL import ImageGrab, Image, ImageDraw
 
-from pixel_watcher.utils import get_relevant_rectangle
+from w3cwatcher.utils import get_relevant_rectangle
 
 # new helper to normalize hwnd to root
 GA_ROOT = win32con.GA_ROOT

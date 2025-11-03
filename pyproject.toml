@@ -3,10 +3,10 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pixel-watcher"
+name = "w3cwatcher"
 version = "0.1.0"
-description = "Watch a pixel in a window and notify via Discord when it changes."
-authors = [{ name = "Your Name" }]
+description = "Watch color of W3Champions match button and notify via Discord when it stops being red (in-queue)."
+authors = [{ name = "Cubiss" }]
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pixel-watcher = "pixel_watcher.cli:main"
+w3cwatcher = "pixel_watcher.cli:main"
 
 [tool.setuptools]
-packages = ["pixel_watcher"]
+packages = ["w3cwatcher"]

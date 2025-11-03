@@ -6,7 +6,7 @@ from typing import Optional
 from PIL import Image, ImageDraw
 import pystray
 
-from .config import Settings
+from .config import Settings, open_user_config
 from .watcher import PixelWatcher
 
 
@@ -25,8 +25,14 @@ class TrayApp:
         self._icon.menu = pystray.Menu(
             pystray.MenuItem("Start", self._start),
             pystray.MenuItem("Stop", self._stop),
-            pystray.MenuItem("Check", self._check),
-            pystray.MenuItem("Log", self._log),
+            pystray.MenuItem(
+                "Tools",
+                pystray.Menu(
+                    pystray.MenuItem("Check", self._check),
+                    pystray.MenuItem("Log", self._log),
+                    pystray.MenuItem("Settings", self._settings),
+                )
+            ),
             pystray.MenuItem("Quit", self._quit)
         )
 
@@ -41,10 +47,11 @@ class TrayApp:
         if self._worker and self._worker.is_alive():
             return
 
-        # wrapper so we know when finished
         def run_and_reset():
-            self._watcher.run()  # run check
-            self._icon.icon = self._icon_red  # back to red when done
+            print('Starting watcher.')
+            self._watcher.run()
+            print('Watcher finished.')
+            self._icon.icon = self._icon_red
 
         self._watcher = PixelWatcher(self.s)
         self._worker = threading.Thread(target=run_and_reset, daemon=True)
@@ -71,14 +78,16 @@ class TrayApp:
 
         # wrapper so we know when finished
         def run_and_reset():
-            self._watcher.run()  # run check
-            self._icon.icon = self._icon_red  # back to red when done
+            print('Starting watcher.')
+            self._watcher.run()
+            print('Watcher finished.')
+            self._icon.icon = self._icon_red
+
 
         self._watcher = PixelWatcher(self.s, check_only=True)
         self._worker = threading.Thread(target=run_and_reset, daemon=True)
         self._worker.start()
 
-        # green while checking
         self._icon.icon = self._icon_green
 
 
@@ -91,6 +100,7 @@ class TrayApp:
             # Redirect stdout & stderr
             sys.stdout = open("CONOUT$", "w", buffering=1)
             sys.stderr = open("CONOUT$", "w", buffering=1)
+            hwnd = ctypes.windll.kernel32.GetConsoleWindow()
 
         SW_RESTORE = 9
         ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
@@ -99,6 +109,9 @@ class TrayApp:
         print('Your log is here.')
         return
 
+    def _settings(self, _):
+        # Open the user config file in the default editor
+        open_user_config()
 
     def run(self):
         self._icon.run()

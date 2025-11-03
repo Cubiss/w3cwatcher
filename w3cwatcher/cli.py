@@ -1,6 +1,6 @@
 from __future__ import annotations
 import argparse
-from .config import Settings, get_webhook_url
+from .config import Settings, load_user_config
 from .watcher import PixelWatcher
 from .tray import TrayApp
 from .utils import find_window_by_keyword
@@ -32,8 +32,8 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def settings_from_args(args: argparse.Namespace) -> Settings:
-    s = Settings()
+def load_settings(args: argparse.Namespace) -> Settings:
+    s = load_user_config(create_if_missing=True)
     if args.title is not None:
         s.window_title_keyword = args.title
     if args.x is not None:
@@ -47,14 +47,14 @@ def settings_from_args(args: argparse.Namespace) -> Settings:
     if args.message is not None:
         s.discord_message = args.message
     if args.webhook is not None:
-        s.webhook_url = args.webhook
+        s.discord_webhook_url = args.webhook
     return s
 
 
 def main():
     parser = build_parser()
     args = parser.parse_args()
-    s = settings_from_args(args)
+    s = load_settings(args)
 
     if args.check:
         PixelWatcher(s, check_only=True).run()
