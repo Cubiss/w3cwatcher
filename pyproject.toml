@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "w3cwatcher"
-version = "0.1.2"
+version = "0.1.3"
 description = "Watch color of W3Champions match button and notify via Discord when it stops being red (in-queue)."
 authors = [{ name = "Cubiss" }]
 readme = "README.md"

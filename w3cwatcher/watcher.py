@@ -40,6 +40,9 @@ class PixelWatcher:
         while not self._stop:
             try:
                 hwnd_w3c = find_window_by_keyword(self.s.w3champions_window_title)
+                hwnd_warcraft3 = find_window_by_keyword(self.s.warcraft3_window_title)
+                in_game = hwnd_warcraft3 is not None
+
                 if not hwnd_w3c:
                     print(f"[!] Could not find window with title containing '{self.s.w3champions_window_title}'.")
                     time.sleep(self.s.poll_s)
@@ -52,7 +55,6 @@ class PixelWatcher:
                     print(f'{self.s.w3champions_window_title} window is not visible.')
                     time.sleep(self.s.poll_s)
                     continue
-
 
                 if not point_belongs_to_window(hwnd_w3c, sx, sy):
                     try:
@@ -74,7 +76,7 @@ class PixelWatcher:
                 if not self._was_in_queue:
                     queue_start = datetime.now()
 
-                print(f"RGB={rgb} ({color_name}) -> in_queue={in_queue}")
+                self.s.logger.debug(f"RGB={rgb} ({color_name}) -> in_queue={in_queue}, in_game={in_game}")
 
                 if self.check_only:
                     img = get_window_image(hwnd_w3c, self.s.inner_rectangle_aspect_ratio)
@@ -90,7 +92,7 @@ class PixelWatcher:
                 now = time.time()
                 should_notify = False
 
-                if self._was_in_queue and not in_queue:
+                if self._was_in_queue and in_game:
                     should_notify = True
 
                 if should_notify and now - self._last_sent_ts >= self.s.debounce_seconds:
@@ -108,7 +110,7 @@ class PixelWatcher:
                     send_discord_webhook(self.s.discord_webhook_url, self.s.discord_message, embed_fields=embed)
                     self._last_sent_ts = now
 
-                self._was_in_queue = in_queue
+                self._was_in_queue = in_queue and not in_game
                 time.sleep(self.s.poll_s)
 
             except KeyboardInterrupt:
