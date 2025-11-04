@@ -120,7 +120,7 @@ def _detach_console() -> None:
 def _ensure_single_instance() -> bool:
     global _singleton_mutex_handle
     _singleton_mutex_handle = win32event.CreateMutex(None, False, _mutex_name)
-    return win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS
+    return win32api.GetLastError() != winerror.ERROR_ALREADY_EXISTS
 
 
 def _show_multiple_instances_error() -> None:
