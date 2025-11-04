@@ -5,7 +5,7 @@ import os
 import json
 import subprocess
 import sys
-from dataclasses import dataclass, asdict, fields
+from dataclasses import dataclass, asdict, fields, field
 from typing import Any, Dict
 from pathlib import Path
 from platformdirs import user_config_dir
@@ -22,13 +22,21 @@ class Settings:
     poll_s: int = 5
     debounce_seconds: int = 60
     discord_message: str = "Match found!"
-    discord_webhook_url: str = ""
+    discord_webhook_url: str = field(default='', metadata={"serialize": False})
     inner_rectangle_aspect_ratio: float = 1846 / 1040
     allow_multiple_instances: bool = False
     log_level: str = "INFO"
     log_keep: int = 10
-    logfile: Path = None
-    logger: logging.Logger = None
+    logfile: Path = field(default=None, metadata={"serialize": False})
+    logger: logging.Logger = field(default=None, metadata={"serialize": False})
+
+    def __str__(self):
+        serializable = {}
+        for f in fields(self):
+            if f.metadata.get("serialize", True):
+                serializable[f.name] = getattr(self, f.name)
+        return json.dumps(serializable, indent=2)
+
 
 def _config_file_dir() -> Path:
     return Path(user_config_dir(APP_NAME, appauthor=False))

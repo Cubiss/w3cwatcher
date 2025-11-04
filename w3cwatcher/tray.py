@@ -101,7 +101,8 @@ class TrayApp:
 
 
     def _log(self, _):
-        os.startfile(self.s.logfile)
+        # os.startfile(self.s.logfile)
+        os.system(f'start powershell -command "Get-Content \'{self.s.logfile}\' -Wait -Tail 40"')
 
     def _settings(self, _):
         open_user_config()

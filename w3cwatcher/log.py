@@ -41,7 +41,7 @@ def _prune_old_logs(dirpath: Path, keep: int) -> None:
 def _formatter() -> logging.Formatter:
     # Millisecond-precision timestamps on every line
     return logging.Formatter(
-        fmt="%(asctime)s.%(msecs)03d [%(levelname)s] %(name)s %(threadName)s: %(message)s",
+        fmt="%(asctime)s.%(msecs)03d [%(levelname)s]: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 

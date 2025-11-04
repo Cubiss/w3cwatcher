@@ -61,6 +61,8 @@ def main():
     s = load_settings(args)
     init_logging(s)
 
+    print(s)
+
     if args.config:
         print(config_file_path())
         open_user_config()
