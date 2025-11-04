@@ -19,7 +19,8 @@ class Settings:
     x_offset_pct: float = 0.755
     y_offset_pct: float = 0.955
     in_queue_color: str = "red"
-    poll_s: int = 5
+    ready_color: str = "green"
+    poll_s: int = 1
     debounce_seconds: int = 60
     discord_message: str = "Match found!"
     discord_webhook_url: str = field(default='', metadata={"serialize": False})
