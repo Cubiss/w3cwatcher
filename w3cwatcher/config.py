@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 import os
 import json
 import subprocess
@@ -8,34 +10,25 @@ from typing import Any, Dict
 from pathlib import Path
 from platformdirs import user_config_dir
 
-# ---- App identity (used for config path) ----
 APP_NAME = "W3CWatcher"
-
-# ---- Defaults (unchanged) ----
-DEFAULT_WINDOW_TITLE_KEYWORD = "W3Champions"
-DEFAULT_X_OFFSET_PCT = 0.755
-DEFAULT_Y_OFFSET_PCT = 0.955
-DEFAULT_POLL_S = 5
-DEFAULT_DEBOUNCE_SECONDS = 60
-DEFAULT_DISCORD_MESSAGE = "Match found!"
-DEFAULT_IN_QUEUE_COLOR = "red"
-DEFAULT_INNER_RECTANGLE_ASPECT_RATIO = 1846 / 1040
-DEFAULT_DISCORD_WEBHOOK_URL = ""
-DEFAULT_ALLOW_MULTIPLE_INSTANCES = True
 
 @dataclass
 class Settings:
-    window_title_keyword: str = DEFAULT_WINDOW_TITLE_KEYWORD
-    x_offset_pct: float = DEFAULT_X_OFFSET_PCT
-    y_offset_pct: float = DEFAULT_Y_OFFSET_PCT
-    in_queue_color: str = DEFAULT_IN_QUEUE_COLOR
-    poll_s: int = DEFAULT_POLL_S
-    debounce_seconds: int = DEFAULT_DEBOUNCE_SECONDS
-    discord_message: str = DEFAULT_DISCORD_MESSAGE
-    discord_webhook_url: str = DEFAULT_DISCORD_WEBHOOK_URL
-    inner_rectangle_aspect_ratio: float = DEFAULT_INNER_RECTANGLE_ASPECT_RATIO
-    allow_multiple_instances: bool = DEFAULT_ALLOW_MULTIPLE_INSTANCES
-
+    w3champions_window_title: str = "W3Champions"
+    warcraft3_window_title: str = "Warcraft III"
+    x_offset_pct: float = 0.755
+    y_offset_pct: float = 0.955
+    in_queue_color: str = "red"
+    poll_s: int = 5
+    debounce_seconds: int = 60
+    discord_message: str = "Match found!"
+    discord_webhook_url: str = ""
+    inner_rectangle_aspect_ratio: float = 1846 / 1040
+    allow_multiple_instances: bool = False
+    log_level: str = "INFO"
+    log_keep: int = 10
+    logfile: Path = None
+    logger: logging.Logger = None
 
 def _config_file_dir() -> Path:
     return Path(user_config_dir(APP_NAME, appauthor=False))

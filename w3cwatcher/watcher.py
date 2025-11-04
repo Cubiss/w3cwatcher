@@ -29,13 +29,13 @@ class PixelWatcher:
             print(f"[!] No webhook URL. Put it in {config_file_path()}")
             return
 
-        hwnd = find_window_by_keyword(self.s.window_title_keyword)
+        hwnd = find_window_by_keyword(self.s.w3champions_window_title)
         if not hwnd:
-            print(f"[!] Could not find window with title containing '{self.s.window_title_keyword}'.")
+            print(f"[!] Could not find window with title containing '{self.s.w3champions_window_title}'.")
             return
 
         print(
-            f"[i] Monitoring '{self.s.window_title_keyword}' at offsets "
+            f"[i] Monitoring '{self.s.w3champions_window_title}' at offsets "
             f"({self.s.x_offset_pct}, {self.s.y_offset_pct}) for In Queue Color = {self.s.in_queue_color} ..."
         )
 
@@ -45,7 +45,7 @@ class PixelWatcher:
                                              self.s.inner_rectangle_aspect_ratio)
 
                 if (sx, sy) == (0, 0):
-                    print(f'{self.s.window_title_keyword} window is not visible.')
+                    print(f'{self.s.w3champions_window_title} window is not visible.')
                     time.sleep(self.s.poll_s)
                     continue
 
@@ -54,7 +54,7 @@ class PixelWatcher:
                     try:
                         under = win32gui.WindowFromPoint((sx, sy))
                         title = win32gui.GetWindowText(win32gui.GetAncestor(under, win32con.GA_ROOT))
-                        print(f"[skip] ({sx},{sy}) belongs to '{title}', not {self.s.window_title_keyword}")
+                        print(f"[skip] ({sx},{sy}) belongs to '{title}', not {self.s.w3champions_window_title}")
                     except Exception as ex:
                         print(f"[skip] ({sx},{sy}) could not check pixel ownership:")
                         print(ex)

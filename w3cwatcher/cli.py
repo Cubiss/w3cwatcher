@@ -1,7 +1,7 @@
 from __future__ import annotations
 import argparse
-import ctypes
 from .config import Settings, load_user_config, open_user_config, config_file_path
+from .log import init_logging
 from .watcher import PixelWatcher
 from .tray import run_tray, create_tray_shortcut
 
@@ -25,11 +25,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--debounce', type=int, default=None, help='Minimum seconds between webhooks')
     p.add_argument('--message', default=None, help='Discord message content')
     p.add_argument('--webhook', default=None, help='Discord webhook URL')
-    p.add_argument('--tray', action='store_true', help='Run as a system tray app')
     p.add_argument('--check', action='store_true', help='Check currently captured rectangle')
     p.add_argument('--config', action='store_true', help='Open config file')
-    p.add_argument('--shortcut', action='store_true', help='Create a desktop shortcut')
-    p.add_argument('--allow-multiple-instances', action='store_true', help='Disable single instance check')
+    p.add_argument('--tray', action='store_true', help='Run as a system tray app')
+    p.add_argument('--shortcut', action='store_true', help='Create a desktop shortcut for Tray')
+    p.add_argument('--allow-multiple-instances', action='store_true', help='[Tray]Disable single instance check')
 
     return p
 
@@ -37,7 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
 def load_settings(args: argparse.Namespace) -> Settings:
     s = load_user_config(create_if_missing=True)
     if args.title is not None:
-        s.window_title_keyword = args.title
+        s.w3champions_window_title = args.title
     if args.x is not None:
         s.x_offset_pct = args.x
     if args.y is not None:
@@ -50,8 +50,8 @@ def load_settings(args: argparse.Namespace) -> Settings:
         s.discord_message = args.message
     if args.webhook is not None:
         s.discord_webhook_url = args.webhook
-    if args.allow_multiple_instances is not None:
-        s.allow_multiple_instances = args.allow_multiple_instances
+    if args.allow_multiple_instances:
+        s.allow_multiple_instances = True
     return s
 
 
@@ -59,14 +59,13 @@ def main():
     parser = build_parser()
     args = parser.parse_args()
     s = load_settings(args)
+    init_logging(s)
 
     if args.config:
         print(config_file_path())
         open_user_config()
     elif args.shortcut:
-        print(config_file_path())
         create_tray_shortcut()
-
     elif args.check:
         PixelWatcher(s, check_only=True).run()
     elif args.tray:

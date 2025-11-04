@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import os
 import sys
 import ctypes
 import threading
@@ -14,6 +16,8 @@ import win32com.client
 from .config import Settings, open_user_config, APP_NAME
 from .watcher import PixelWatcher
 
+_mutex_name = "W3CWatcherSingletonMutex"
+_singleton_mutex_handle = None
 
 class TrayApp:
     def __init__(self, settings: Settings):
@@ -97,25 +101,9 @@ class TrayApp:
 
 
     def _log(self, _):
-        hwnd = ctypes.windll.kernel32.GetConsoleWindow()
-        if not hwnd:
-            ctypes.windll.kernel32.AllocConsole()
-            ctypes.windll.kernel32.SetConsoleTitleW(APP_NAME)
-
-            # Redirect stdout & stderr
-            sys.stdout = open("CONOUT$", "w", buffering=1)
-            sys.stderr = open("CONOUT$", "w", buffering=1)
-            hwnd = ctypes.windll.kernel32.GetConsoleWindow()
-
-        SW_RESTORE = 9
-        ctypes.windll.user32.ShowWindow(hwnd, SW_RESTORE)
-        ctypes.windll.user32.SetForegroundWindow(hwnd)
-
-        print('Your log is here.')
-        return
+        os.startfile(self.s.logfile)
 
     def _settings(self, _):
-        # Open the user config file in the default editor
         open_user_config()
 
     def run(self):
@@ -125,22 +113,14 @@ class TrayApp:
 def _detach_console() -> None:
     try:
         ctypes.windll.kernel32.FreeConsole()
-    except Exception as ex:
+    except Exception:
         pass
 
 
-def _check_single_instance() -> bool:
-    mutex_name = "W3CWatcherSingletonMutex"
-
-    # Try to create a global named mutex
-    handle = win32event.CreateMutex(None, False, mutex_name)
-    last_error = win32api.GetLastError()
-
-    if last_error == winerror.ERROR_ALREADY_EXISTS:
-        print("Another instance is already running.")
-        return False
-
-    return True
+def _ensure_single_instance() -> bool:
+    global _singleton_mutex_handle
+    _singleton_mutex_handle = win32event.CreateMutex(None, False, _mutex_name)
+    return win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS
 
 
 def _show_multiple_instances_error() -> None:
@@ -160,20 +140,20 @@ def _show_multiple_instances_error() -> None:
 
 
 def run_tray(settings: Settings) -> None:
-    if not (settings.allow_multiple_instances or _check_single_instance()):
-        return _show_multiple_instances_error()
     _detach_console()
+    if not (settings.allow_multiple_instances or _ensure_single_instance()):
+        return _show_multiple_instances_error()
+
+    print('Starting W3CWatcher Tray app')
     return TrayApp(settings).run()
 
 
 def create_tray_shortcut():
-    # Use the real Desktop path from the Shell
     shell = win32com.client.Dispatch("WScript.Shell")
     desktop = Path(shell.SpecialFolders("Desktop"))
 
     shortcut_path = desktop / "W3CWatcher.lnk"
 
-    # Prefer pythonw.exe (same dir as the current interpreter if available)
     exe = Path(sys.executable)
     pythonw = exe if exe.name.lower() == "pythonw.exe" else exe.with_name("pythonw.exe")
     if not pythonw.exists():
