@@ -3,7 +3,7 @@ import argparse
 import ctypes
 from .config import Settings, load_user_config, open_user_config, config_file_path
 from .watcher import PixelWatcher
-from .tray import TrayApp, create_tray_shortcut
+from .tray import run_tray, create_tray_shortcut
 
 
 def parse_rgb(text: str) -> tuple[int, int, int]:
@@ -27,8 +27,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--webhook', default=None, help='Discord webhook URL')
     p.add_argument('--tray', action='store_true', help='Run as a system tray app')
     p.add_argument('--check', action='store_true', help='Check currently captured rectangle')
-    p.add_argument('--config', action='store_true', help='Opens config file')
-    p.add_argument('--shortcut', action='store_true', help='Creates a desktop shortcut')
+    p.add_argument('--config', action='store_true', help='Open config file')
+    p.add_argument('--shortcut', action='store_true', help='Create a desktop shortcut')
+    p.add_argument('--allow-multiple-instances', action='store_true', help='Disable single instance check')
 
     return p
 
@@ -49,15 +50,9 @@ def load_settings(args: argparse.Namespace) -> Settings:
         s.discord_message = args.message
     if args.webhook is not None:
         s.discord_webhook_url = args.webhook
+    if args.allow_multiple_instances is not None:
+        s.allow_multiple_instances = args.allow_multiple_instances
     return s
-
-def detach_console():
-    # Only detach if we currently have a console
-    try:
-        ctypes.windll.kernel32.FreeConsole()
-    except Exception as ex:
-        print('Detach failed: ', ex)
-        pass
 
 
 def main():
@@ -75,8 +70,6 @@ def main():
     elif args.check:
         PixelWatcher(s, check_only=True).run()
     elif args.tray:
-        detach_console()
-        app = TrayApp(s)
-        app.run()
+        run_tray(s)
     else:
         PixelWatcher(s).run()

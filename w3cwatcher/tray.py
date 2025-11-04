@@ -3,11 +3,14 @@ import sys
 import ctypes
 import threading
 from typing import Optional
+
+import win32api
+import win32event
+import winerror
 from PIL import Image, ImageDraw
 import pystray
 from pathlib import Path
 import win32com.client
-
 from .config import Settings, open_user_config, APP_NAME
 from .watcher import PixelWatcher
 
@@ -117,6 +120,51 @@ class TrayApp:
 
     def run(self):
         self._icon.run()
+
+
+def _detach_console() -> None:
+    try:
+        ctypes.windll.kernel32.FreeConsole()
+    except Exception as ex:
+        pass
+
+
+def _check_single_instance() -> bool:
+    mutex_name = "W3CWatcherSingletonMutex"
+
+    # Try to create a global named mutex
+    handle = win32event.CreateMutex(None, False, mutex_name)
+    last_error = win32api.GetLastError()
+
+    if last_error == winerror.ERROR_ALREADY_EXISTS:
+        print("Another instance is already running.")
+        return False
+
+    return True
+
+
+def _show_multiple_instances_error() -> None:
+    message = f"{APP_NAME} is already running.\n\n" \
+               "Check your system tray, or start with --allow-multiple-instances if you really need another copy."
+    print(message)
+    MB_OK = 0x00000000
+    MB_ICONWARNING = 0x00000030
+    MB_SYSTEMMODAL = 0x00001000  # ensure it shows even if no foreground window
+    ctypes.windll.user32.MessageBoxW(
+        None,
+        message,
+        APP_NAME,
+        MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL,
+    )
+    return
+
+
+def run_tray(settings: Settings) -> None:
+    if not (settings.allow_multiple_instances or _check_single_instance()):
+        return _show_multiple_instances_error()
+    _detach_console()
+    return TrayApp(settings).run()
+
 
 def create_tray_shortcut():
     # Use the real Desktop path from the Shell

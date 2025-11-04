@@ -21,6 +21,7 @@ DEFAULT_DISCORD_MESSAGE = "Match found!"
 DEFAULT_IN_QUEUE_COLOR = "red"
 DEFAULT_INNER_RECTANGLE_ASPECT_RATIO = 1846 / 1040
 DEFAULT_DISCORD_WEBHOOK_URL = ""
+DEFAULT_ALLOW_MULTIPLE_INSTANCES = True
 
 @dataclass
 class Settings:
@@ -33,6 +34,7 @@ class Settings:
     discord_message: str = DEFAULT_DISCORD_MESSAGE
     discord_webhook_url: str = DEFAULT_DISCORD_WEBHOOK_URL
     inner_rectangle_aspect_ratio: float = DEFAULT_INNER_RECTANGLE_ASPECT_RATIO
+    allow_multiple_instances: bool = DEFAULT_ALLOW_MULTIPLE_INSTANCES
 
 
 def _config_file_dir() -> Path:
