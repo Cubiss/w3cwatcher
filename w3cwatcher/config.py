@@ -21,6 +21,7 @@ class Settings:
     in_queue_color: str = "red"
     ready_color: str = "green"
     poll_s: int = 1
+    reduced_poll_s: int = 5
     debounce_seconds: int = 60
     discord_message: str = "Match found!"
     discord_webhook_url: str = field(default='', metadata={"serialize": False})

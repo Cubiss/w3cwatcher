@@ -40,10 +40,11 @@ class PixelWatcher:
                 hwnd_w3c = find_window_by_keyword(self.s.w3champions_window_title)
                 hwnd_warcraft3 = find_window_by_keyword(self.s.warcraft3_window_title)
                 in_game = hwnd_warcraft3 is not None
+                sleep_s = self.s.reduced_poll_s if in_game else self.s.poll_s
 
                 if not hwnd_w3c:
                     self.s.logger.debug(f"[!] Could not find window with title containing '{self.s.w3champions_window_title}'.")
-                    time.sleep(self.s.poll_s)
+                    time.sleep(sleep_s)
                     continue
 
                 (sx, sy), (x_off, y_off) = get_pixel_screen_xy(hwnd_w3c, self.s.x_offset_pct, self.s.y_offset_pct,
@@ -51,7 +52,7 @@ class PixelWatcher:
 
                 if (sx, sy) == (0, 0):
                     self.s.logger.debug(f'{self.s.w3champions_window_title} window is not visible.')
-                    time.sleep(self.s.poll_s)
+                    time.sleep(sleep_s)
                     continue
 
                 if not point_belongs_to_window(hwnd_w3c, sx, sy):
@@ -112,7 +113,7 @@ class PixelWatcher:
 
 
                 self._was_in_queue = in_queue and not in_game
-                time.sleep(self.s.poll_s)
+                time.sleep(sleep_s)
 
             except KeyboardInterrupt:
                 self.s.logger.info("\n[+] Stopped by user.")
