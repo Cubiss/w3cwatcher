@@ -25,16 +25,14 @@ class PixelWatcher:
 
     def run(self):
         set_dpi_awareness()
+        self._stop = False
+        queue_start = None
 
         if not self.s.discord_webhook_url:
-            print(f"[!] No webhook URL. Put it in {config_file_path()}")
+            self.s.logger.error(f"[!] No webhook URL. Put it in {config_file_path()}")
             return
 
-        print(
-            f"[i] Monitoring '{self.s.w3champions_window_title}' at offsets "
-            f"({self.s.x_offset_pct}, {self.s.y_offset_pct}) for In Queue Color = {self.s.in_queue_color} ..."
-        )
-
+        self.s.logger.info(f"Monitoring started")
 
 
         while not self._stop:
@@ -44,7 +42,7 @@ class PixelWatcher:
                 in_game = hwnd_warcraft3 is not None
 
                 if not hwnd_w3c:
-                    print(f"[!] Could not find window with title containing '{self.s.w3champions_window_title}'.")
+                    self.s.logger.debug(f"[!] Could not find window with title containing '{self.s.w3champions_window_title}'.")
                     time.sleep(self.s.poll_s)
                     continue
 
@@ -52,7 +50,7 @@ class PixelWatcher:
                                              self.s.inner_rectangle_aspect_ratio)
 
                 if (sx, sy) == (0, 0):
-                    print(f'{self.s.w3champions_window_title} window is not visible.')
+                    self.s.logger.debug(f'{self.s.w3champions_window_title} window is not visible.')
                     time.sleep(self.s.poll_s)
                     continue
 
@@ -60,9 +58,9 @@ class PixelWatcher:
                     try:
                         under = win32gui.WindowFromPoint((sx, sy))
                         title = win32gui.GetWindowText(win32gui.GetAncestor(under, win32con.GA_ROOT))
-                        print(f"[skip] ({sx},{sy}) belongs to '{title}', not {self.s.w3champions_window_title}")
+                        self.s.logger.debug(f"[skip] ({sx},{sy}) belongs to '{title}', not {self.s.w3champions_window_title}")
                     except Exception as ex:
-                        print(f"[skip] ({sx},{sy}) could not check pixel ownership:")
+                        self.s.logger.debug(f"[skip] ({sx},{sy}) could not check pixel ownership:")
                         print(ex)
 
                     time.sleep(self.s.poll_s)
@@ -72,9 +70,6 @@ class PixelWatcher:
                 rgb = grab_pixel_rgb(sx, sy)
                 color_name = name_color(*rgb)
                 in_queue = color_name == self.s.in_queue_color
-
-                if not self._was_in_queue:
-                    queue_start = datetime.now()
 
                 self.s.logger.debug(f"RGB={rgb} ({color_name}) -> in_queue={in_queue}, in_game={in_game}")
 
@@ -89,33 +84,39 @@ class PixelWatcher:
                     self.check_only = False
                     return
 
+                if not self._was_in_queue:
+                    queue_start = datetime.now()
+                    self.s.logger.info('Detected queue.')
+
                 now = time.time()
-                should_notify = False
 
                 if self._was_in_queue and in_game:
-                    should_notify = True
+                    self.s.logger.info('Detected game start.')
 
-                if should_notify and now - self._last_sent_ts >= self.s.debounce_seconds:
-                    time_in_queue = datetime.now() - queue_start
-                    time_in_queue_str = (datetime.min + time_in_queue).strftime("%H:%M:%S")
-                    print("Match started after:", time_in_queue_str)
+                    if now - self._last_sent_ts < self.s.debounce_seconds:
+                        self.s.logger.info(f'Not pinging, pinged {now - self._last_sent_ts}')
+                    else:
+                        time_in_queue = datetime.now() - queue_start
+                        time_in_queue_str = (datetime.min + time_in_queue).strftime("%H:%M:%S")
+                        self.s.logger.info("Match started after:", time_in_queue_str)
 
-                    embed = {
-                        "title": "W3CWatcher",
-                        "description": f"Pixel at offsets ({self.s.x_offset_pct}, {self.s.y_offset_pct}) matched target.",
-                        "fields": [
-                            {"name": "Time in Queue", "value": str(time_in_queue_str), "inline": True},
-                        ],
-                    }
-                    send_discord_webhook(self.s.discord_webhook_url, self.s.discord_message, embed_fields=embed)
-                    self._last_sent_ts = now
+                        embed = {
+                            "title": "W3CWatcher",
+                            "description": f"Pixel at offsets ({self.s.x_offset_pct}, {self.s.y_offset_pct}) matched target.",
+                            "fields": [
+                                {"name": "Time in Queue", "value": str(time_in_queue_str), "inline": True},
+                            ],
+                        }
+                        send_discord_webhook(self.s.discord_webhook_url, self.s.discord_message, embed_fields=embed)
+                        self._last_sent_ts = now
+
 
                 self._was_in_queue = in_queue and not in_game
                 time.sleep(self.s.poll_s)
 
             except KeyboardInterrupt:
-                print("\n[+] Stopped by user.")
+                self.s.logger.info("\n[+] Stopped by user.")
                 break
             except Exception as e:
-                print(f"[!] Error: {e}")
+                self.s.logger.error(f"[!] Error: {e}")
                 time.sleep(self.s.poll_s)
