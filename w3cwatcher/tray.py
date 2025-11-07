@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import os
-import sys
 import ctypes
 import threading
+from logging import Logger
 from typing import Optional
 
 import win32api
@@ -11,17 +11,19 @@ import win32event
 import winerror
 from PIL import Image, ImageDraw
 import pystray
-from pathlib import Path
-import win32com.client
-from .config import Settings, open_user_config, APP_NAME
-from .watcher import PixelWatcher
+from .config import Config, open_config_file, APP_NAME
+from .monitor import Monitor
+from .notifier import Notifier
 
-_mutex_name = "W3CWatcherSingletonMutex"
-_singleton_mutex_handle = None
 
 class TrayApp:
-    def __init__(self, settings: Settings):
-        self.s = settings
+    _mutex_name = "W3CWatcherSingletonMutex"
+    _singleton_mutex_handle = None
+
+    def __init__(self, logger: Logger, config: Config, notifier: Notifier):
+        self.notifier = notifier
+        self.logger = logger
+        self.config = config
 
         # store icons
         self._icon_red = self._icon_image(color=(200, 60, 60))
@@ -29,7 +31,7 @@ class TrayApp:
 
         self._icon = pystray.Icon(APP_NAME, self._icon_red, APP_NAME)
         self._worker: Optional[threading.Thread] = None
-        self._watcher: Optional[PixelWatcher] = None
+        self._monitor: Optional[Monitor] = None
 
         self._icon.menu = pystray.Menu(
             pystray.MenuItem("Start", self._start),
@@ -53,16 +55,22 @@ class TrayApp:
         return img
 
     def _start(self, _):
+        self.start()
+
+    def start(self):
         if self._worker and self._worker.is_alive():
+            print('Already running.')
             return
+
+        print('Init for start.')
 
         def run_and_reset():
             print('Starting watcher.')
-            self._watcher.run()
+            self._monitor.run()
             print('Watcher finished.')
             self._icon.icon = self._icon_red
 
-        self._watcher = PixelWatcher(self.s)
+        self._monitor = Monitor(self.logger, self.config, self.notifier)
         self._worker = threading.Thread(target=run_and_reset, daemon=True)
         self._worker.start()
 
@@ -70,9 +78,9 @@ class TrayApp:
         self._icon.icon = self._icon_green
 
     def _stop(self, _):
-        if self._watcher:
-            self._watcher.stop()
-        self._watcher = None
+        if self._monitor:
+            self._monitor.stop()
+        self._monitor = None
         self._worker = None
 
         # set icon red
@@ -88,12 +96,12 @@ class TrayApp:
         # wrapper so we know when finished
         def run_and_reset():
             print('Starting watcher.')
-            self._watcher.run()
+            self._monitor.run()
             print('Watcher finished.')
             self._icon.icon = self._icon_red
 
 
-        self._watcher = PixelWatcher(self.s, check_only=True)
+        self._monitor = Monitor(self.logger, self.config, self.notifier, check_only=True)
         self._worker = threading.Thread(target=run_and_reset, daemon=True)
         self._worker.start()
 
@@ -102,74 +110,43 @@ class TrayApp:
 
     def _log(self, _):
         # os.startfile(self.s.logfile)
-        os.system(f'start powershell -command "Get-Content \'{self.s.logfile}\' -Wait -Tail 40"')
+        os.system(f'start powershell -command "Get-Content \'{self.config.logfile}\' -Wait -Tail 40"')
 
     def _settings(self, _):
-        open_user_config()
+        open_config_file()
 
     def run(self):
+        self.start()
         self._icon.run()
 
 
-def _detach_console() -> None:
-    try:
-        ctypes.windll.kernel32.FreeConsole()
-    except Exception:
-        pass
+    @staticmethod
+    def _ensure_single_instance() -> bool:
+        global _singleton_mutex_handle
+        _singleton_mutex_handle = win32event.CreateMutex(None, False, _mutex_name)
+        return win32api.GetLastError() != winerror.ERROR_ALREADY_EXISTS
 
+    @staticmethod
+    def _show_multiple_instances_error() -> None:
+        message = f"{APP_NAME} is already running.\n\n" \
+                   "Check your system tray, or start with --allow-multiple-instances if you really need another copy."
+        print(message)
+        MB_OK = 0x00000000
+        MB_ICONWARNING = 0x00000030
+        MB_SYSTEMMODAL = 0x00001000  # ensure it shows even if no foreground window
+        ctypes.windll.user32.MessageBoxW(
+            None,
+            message,
+            APP_NAME,
+            MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL,
+        )
+        return
 
-def _ensure_single_instance() -> bool:
-    global _singleton_mutex_handle
-    _singleton_mutex_handle = win32event.CreateMutex(None, False, _mutex_name)
-    return win32api.GetLastError() != winerror.ERROR_ALREADY_EXISTS
+    @staticmethod
+    def create(logger: Logger, config: Config, notifier: Notifier) -> (TrayApp | None):
+        if not (config.allow_multiple_instances or TrayApp._ensure_single_instance()):
+            TrayApp._show_multiple_instances_error()
+            return None
 
+        return TrayApp(logger, config, notifier)
 
-def _show_multiple_instances_error() -> None:
-    message = f"{APP_NAME} is already running.\n\n" \
-               "Check your system tray, or start with --allow-multiple-instances if you really need another copy."
-    print(message)
-    MB_OK = 0x00000000
-    MB_ICONWARNING = 0x00000030
-    MB_SYSTEMMODAL = 0x00001000  # ensure it shows even if no foreground window
-    ctypes.windll.user32.MessageBoxW(
-        None,
-        message,
-        APP_NAME,
-        MB_OK | MB_ICONWARNING | MB_SYSTEMMODAL,
-    )
-    return
-
-
-def run_tray(settings: Settings) -> None:
-    _detach_console()
-    if not (settings.allow_multiple_instances or _ensure_single_instance()):
-        return _show_multiple_instances_error()
-
-    print('Starting W3CWatcher Tray app')
-    return TrayApp(settings).run()
-
-
-def create_tray_shortcut():
-    shell = win32com.client.Dispatch("WScript.Shell")
-    desktop = Path(shell.SpecialFolders("Desktop"))
-
-    shortcut_path = desktop / "W3CWatcher.lnk"
-
-    exe = Path(sys.executable)
-    pythonw = exe if exe.name.lower() == "pythonw.exe" else exe.with_name("pythonw.exe")
-    if not pythonw.exists():
-        pythonw = exe
-
-    arguments = "-m w3cwatcher --tray"
-    working_dir = Path.cwd()
-
-    shortcut = shell.CreateShortcut(str(shortcut_path))
-    shortcut.Targetpath = str(pythonw)
-    shortcut.Arguments = arguments
-    shortcut.WorkingDirectory = str(working_dir)
-    shortcut.IconLocation = str(pythonw)
-    shortcut.Description = "Launch PixelWatcher in tray mode"
-    shortcut.Save()
-
-    print(f"Created desktop shortcut: {shortcut_path}")
-    return str(shortcut_path)

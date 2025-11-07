@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import List
 
 from platformdirs import user_log_dir
-from .config import APP_NAME, Settings
+from .config import APP_NAME, Config
 
 
 def _log_dir() -> Path:
@@ -46,7 +46,7 @@ def _formatter() -> logging.Formatter:
     )
 
 
-def init_logging(settings: Settings) -> tuple[logging.Logger, Path]:
+def init_logging(settings: Config) -> tuple[logging.Logger, Path]:
     """
     Initialize per-instance file logging and redirect print/stdout/stderr.
     Safe to call once at startup; no duplicate handlers added on repeats.
@@ -55,11 +55,10 @@ def init_logging(settings: Settings) -> tuple[logging.Logger, Path]:
     log_dir = _log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
     logfile = _make_instance_logfile()
-
     logger = logging.getLogger(APP_NAME)
-    level_name = getattr(settings, "log_level", "INFO") or "INFO"
-    logger.setLevel(getattr(logging, level_name.upper(), logging.INFO))
+    logger.setLevel(getattr(settings, "log_level", "INFO"))
     logger.propagate = False
+
 
     # Avoid duplicate file handlers if called twice
     if not any(isinstance(h, logging.FileHandler) and getattr(h, "_w3cwatcher_file", False)
@@ -88,8 +87,5 @@ def init_logging(settings: Settings) -> tuple[logging.Logger, Path]:
     _prune_old_logs(log_dir, keep)
 
     logger.debug(f"Logging initialized -> {logfile}")
-
-    settings.logger = logger
-    settings.logfile = logfile
 
     return logger, logfile
