@@ -1,0 +1,106 @@
+import os
+import subprocess
+import sys
+import ctypes
+from pathlib import Path
+from typing import Optional
+
+from platformdirs import user_config_dir
+
+_IS_WINDOWS = (os.name == "nt")
+
+if _IS_WINDOWS:
+    import win32gui
+    import win32con
+    import win32api
+    from win32com.client import Dispatch
+
+    # GetAncestor flags (not all exposed in win32con)
+    GA_PARENT = 1
+    GA_ROOT = 2
+    GA_ROOTOWNER = 3
+
+    DPI_RESULT_OK = 0
+    DPI_RESULT_ALREADY_SET = 0x5
+    PROCESS_PER_MONITOR_DPI_AWARE = 2
+
+
+def _ensure_windows() -> None:
+    if not _IS_WINDOWS:
+        raise NotImplementedError("This function is only supported on Windows.")
+
+
+def set_dpi_awareness() -> None:
+    if not _IS_WINDOWS:
+        return
+
+    # noinspection PyBroadException
+    try:
+        # noinspection PyUnresolvedReferences
+        hr = ctypes.windll.shcore.SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE)
+        if hr in (DPI_RESULT_OK, DPI_RESULT_ALREADY_SET):
+            return
+    except Exception:
+        pass
+
+
+def get_app_name() -> str:
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).stem
+
+    main_module = sys.modules.get('__main__')
+    if main_module is not None:
+        if hasattr(main_module, '__spec__') and main_module.__spec__ is not None:
+            return main_module.__spec__.name
+
+        if hasattr(main_module, '__file__') and main_module.__file__:
+            return Path(main_module.__file__).stem
+
+    return Path(sys.argv[0]).stem or "app"
+
+
+def open_file(file: (Path | str)) -> None:
+    if os.name == "nt":
+        os.startfile(file)
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", str(file)])
+    else:
+        subprocess.Popen(["xdg-open", str(file)])
+
+
+def get_config_file(path: (Path | str) = None, user_config: bool = False, app_name: str = None) -> Path:
+    app_name = app_name or get_app_name()
+    if path is not None:
+        file = Path(path)
+    elif user_config:
+        file = Path(user_config_dir(app_name, appauthor=False)) / "config.json"
+    else:
+        file = Path('../') / f'{app_name}.config.json'
+
+    file.parent.mkdir(parents=True, exist_ok=True)
+    return file
+
+def create_tray_shortcut(
+    target_exe: Optional[str] = None,
+    shortcut_name: str = f"W3Champions.lnk",
+    working_dir: Optional[str] = None,
+    icon_path: Optional[str] = None,
+) -> str:
+    _ensure_windows()
+
+    target_exe = target_exe or sys.executable
+    if not os.path.isabs(target_exe):
+        target_exe = os.path.abspath(target_exe)
+    working_dir = working_dir or os.path.dirname(target_exe)
+
+    desktop = win32api.SHGetFolderPath(0, win32con.CSIDL_DESKTOP, None, 0)
+    shortcut_path = os.path.join(desktop, shortcut_name)
+
+    shell = Dispatch("WScript.Shell")
+    shortcut = shell.CreateShortCut(shortcut_path)
+    shortcut.Targetpath = target_exe
+    shortcut.WorkingDirectory = working_dir
+    if icon_path:
+        shortcut.IconLocation = icon_path
+    shortcut.save()
+    return shortcut_path

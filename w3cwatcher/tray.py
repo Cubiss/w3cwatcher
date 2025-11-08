@@ -5,13 +5,13 @@ import ctypes
 import threading
 from logging import Logger
 from typing import Optional
-
 import win32api
 import win32event
 import winerror
 from PIL import Image, ImageDraw
 import pystray
-from .config import Config, open_config_file, APP_NAME
+
+from .config import Config, APP_NAME, TrayConfig
 from .monitor import Monitor
 from .notifier import Notifier
 
@@ -20,12 +20,11 @@ class TrayApp:
     _mutex_name = "W3CWatcherSingletonMutex"
     _singleton_mutex_handle = None
 
-    def __init__(self, logger: Logger, config: Config, notifier: Notifier):
-        self.notifier = notifier
+    def __init__(self, logger: Logger, config: TrayConfig, monitor: Monitor):
         self.logger = logger
         self.config = config
+        self.monitor = monitor
 
-        # store icons
         self._icon_red = self._icon_image(color=(200, 60, 60))
         self._icon_green = self._icon_image(color=(60, 200, 60))
 
@@ -113,17 +112,15 @@ class TrayApp:
         os.system(f'start powershell -command "Get-Content \'{self.config.logfile}\' -Wait -Tail 40"')
 
     def _settings(self, _):
-        open_config_file()
+        self.config.show()
 
     def run(self):
         self.start()
         self._icon.run()
 
 
-    @staticmethod
-    def _ensure_single_instance() -> bool:
-        global _singleton_mutex_handle
-        _singleton_mutex_handle = win32event.CreateMutex(None, False, _mutex_name)
+    def _ensure_single_instance(self) -> bool:
+        self._singleton_mutex_handle = win32event.CreateMutex(None, False, self._mutex_name)
         return win32api.GetLastError() != winerror.ERROR_ALREADY_EXISTS
 
     @staticmethod

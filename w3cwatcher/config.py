@@ -1,14 +1,13 @@
 from __future__ import annotations
-import sys
+from pathlib import Path
 
-from w3cwatcher.unified_config import UnifiedConfig, field
+from .logging import ALLOWED_LOG_LEVELS
+from w3cwatcher.utils.config_base import ConfigBase, field, get_allowed_values_validator
 
 APP_NAME = "W3CWatcher"
 
-class Config(UnifiedConfig):
-    def __init__(self):
-        super().__init__(app_name=APP_NAME, user_config=not getattr(sys, 'frozen', False))
 
+class MonitorConfig(ConfigBase):
     w3champions_window_title: str = field(
         default="W3Champions",
         arg="--title",
@@ -32,6 +31,11 @@ class Config(UnifiedConfig):
         help_text="Client Y offset (0.5 = middle, 1.0 = bottom)."
     )
 
+    enforced_window_aspect_ratio: float = field(
+        default=1846 / 1040,
+        help_text="Aspect ratio for the inner rectangle of the window capture."
+    )
+
     in_queue_color: str = field(
         default="red",
         help_text="Color used to detect when in queue."
@@ -53,48 +57,67 @@ class Config(UnifiedConfig):
         help_text="Reduced polling rate when idle (seconds)."
     )
 
-    debounce_seconds: int = field(
+
+class NotificationsConfig(ConfigBase):
+    discord_webhook_url: str = field(
+        default=None,
+        help_text="Discord webhook URL for notifications."
+    )
+
+    discord_debounce: int = field(
         default=60,
         arg="--debounce",
         help_text="Minimum seconds between Discord webhook notifications."
     )
 
-    discord_message: str = field(
+    match_started_message: str = field(
         default="Match found!",
-        arg="--message",
         help_text="Discord message content to send on match found."
     )
 
-    inner_rectangle_aspect_ratio: float = field(
-        default=1846 / 1040,
-        help_text="Aspect ratio for the inner rectangle of the window capture."
-    )
 
-    allow_multiple_instances: bool = field(
-        default=False,
-        arg="--allow-multiple-instances",
-        help_text="[Tray] Disable single instance check."
-    )
 
+class LoggingConfig(ConfigBase):
     log_level: str = field(
         default="INFO",
-        help_text="Logging level (DEBUG, INFO, WARNING, ERROR)."
+        help_text="Logging level (DEBUG, INFO, WARNING, ERROR).",
+        validator=get_allowed_values_validator(*ALLOWED_LOG_LEVELS)
     )
 
     log_keep: int = field(
         default=10,
-        help_text="Number of old log files to keep."
+        help_text="Number of old log files to keep. -1 for no cleanup"
     )
 
+    log_dir: Path = field(
+        default=None,
+        help_text="Logging directory."
+    )
+
+
+class TrayConfig(ConfigBase):
     autostart: bool = field(
         default=False,
         help_text="Whether the tray app should autostart with Windows."
     )
 
-    # cli-only args
-    discord_webhook_url: str = field(
-        default="",
-        serialize=False,
-        arg="--webhook",
-        help_text="Discord webhook URL for notifications."
+    allow_multiple_instances: bool = field(
+        default=False,
+        help_text="[Tray] Disable single instance check."
     )
+
+
+class Config(ConfigBase):
+    monitor: MonitorConfig = field(
+        default_factory=MonitorConfig
+    )
+
+    notifications: NotificationsConfig = field(
+        default_factory=NotificationsConfig
+    )
+
+    logging: LoggingConfig = field(
+        default_factory=LoggingConfig
+    )
+
+    tray: TrayConfig = field(default_factory=TrayConfig)
