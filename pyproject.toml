@@ -22,3 +22,9 @@ w3cwatcher = "w3cwatcher.cli:main"
 
 [tool.setuptools]
 packages = ["w3cwatcher"]
+
+[tool.black]
+line-length = 107
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = '\.git | \.venv | venv | build | dist'

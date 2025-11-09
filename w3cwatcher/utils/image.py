@@ -7,11 +7,12 @@ from PIL import Image, ImageGrab, ImageDraw
 from .geometry import crop_to_aspect_ratio, Point
 from .window import get_client_bbox_in_screen
 
+
 def hwnd_relative_to_screen_xy(
     hwnd: int,
     x_relative_ltr: float,
     y_relative_ttb: float,
-    aspect_ratio: float=None,
+    aspect_ratio: float = None,
 ) -> Tuple[Point, Point]:
     if not (0.0 <= x_relative_ltr <= 100.0 and 0.0 <= y_relative_ttb <= 100.0):
         raise ValueError("x_relative_ltr and y_relative_ttb must be in the 0..100 range")
@@ -24,8 +25,8 @@ def hwnd_relative_to_screen_xy(
     width = right - left
     height = bottom - top
 
-    x_pixel_offset = int(round((x_relative_ltr / 100.0) * width))
-    y_pixel_offset = int(round((y_relative_ttb / 100.0) * height))
+    x_pixel_offset = int(round(x_relative_ltr * width))
+    y_pixel_offset = int(round(y_relative_ttb * height))
     screen_x = left + x_pixel_offset
     screen_y = top + y_pixel_offset
     return (screen_x, screen_y), (x_pixel_offset, y_pixel_offset)
@@ -90,10 +91,10 @@ def name_color(r: int, g: int, b: int) -> str:
         return "cyan"
 
     if r > g and r > b:
-        return "orange" if g > 100 else "red-ish"
+        return "orange" if g > 100 else "red"
     if g > r and g > b:
-        return "lime" if r > 100 else "green-ish"
+        return "lime" if r > 100 else "green"
     if b > r and b > g:
-        return "purple" if r > 100 else "blue-ish"
+        return "purple" if r > 100 else "blue"
 
     return "unknown"

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
+import win32con
+import win32gui
+
 from .geometry import Point, Rect
+from .platform import _ensure_windows, GA_ROOT
+
 
 def _enum_windows(predicate: Callable[[int, str], bool]) -> Optional[int]:
     _ensure_windows()
@@ -23,7 +28,10 @@ def _enum_windows(predicate: Callable[[int, str], bool]) -> Optional[int]:
             return True
         return True
 
-    win32gui.EnumWindows(_cb, None)
+    try:
+        win32gui.EnumWindows(_cb, None)
+    except Exception as ex:
+        print(ex)
     return result
 
 

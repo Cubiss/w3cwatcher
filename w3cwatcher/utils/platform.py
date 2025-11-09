@@ -4,13 +4,14 @@ import sys
 import ctypes
 from pathlib import Path
 from typing import Optional
-
 from platformdirs import user_config_dir
+import tkinter as tk
+from tkinter import messagebox
 
-_IS_WINDOWS = (os.name == "nt")
+
+_IS_WINDOWS = os.name == "nt"
 
 if _IS_WINDOWS:
-    import win32gui
     import win32con
     import win32api
     from win32com.client import Dispatch
@@ -45,21 +46,21 @@ def set_dpi_awareness() -> None:
 
 
 def get_app_name() -> str:
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         return Path(sys.executable).stem
 
-    main_module = sys.modules.get('__main__')
+    main_module = sys.modules.get("__main__")
     if main_module is not None:
-        if hasattr(main_module, '__spec__') and main_module.__spec__ is not None:
+        if hasattr(main_module, "__spec__") and main_module.__spec__ is not None:
             return main_module.__spec__.name
 
-        if hasattr(main_module, '__file__') and main_module.__file__:
+        if hasattr(main_module, "__file__") and main_module.__file__:
             return Path(main_module.__file__).stem
 
     return Path(sys.argv[0]).stem or "app"
 
 
-def open_file(file: (Path | str)) -> None:
+def open_file(file: Path | str) -> None:
     if os.name == "nt":
         os.startfile(file)
     elif sys.platform == "darwin":
@@ -67,18 +68,6 @@ def open_file(file: (Path | str)) -> None:
     else:
         subprocess.Popen(["xdg-open", str(file)])
 
-
-def get_config_file(path: (Path | str) = None, user_config: bool = False, app_name: str = None) -> Path:
-    app_name = app_name or get_app_name()
-    if path is not None:
-        file = Path(path)
-    elif user_config:
-        file = Path(user_config_dir(app_name, appauthor=False)) / "config.json"
-    else:
-        file = Path('../') / f'{app_name}.config.json'
-
-    file.parent.mkdir(parents=True, exist_ok=True)
-    return file
 
 def create_tray_shortcut(
     target_exe: Optional[str] = None,
@@ -104,3 +93,10 @@ def create_tray_shortcut(
         shortcut.IconLocation = icon_path
     shortcut.save()
     return shortcut_path
+
+
+def show_error(message: str) -> None:
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror("W3CWatcher Error", message)
+    root.destroy()

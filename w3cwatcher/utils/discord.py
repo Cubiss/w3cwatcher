@@ -5,6 +5,7 @@ _WEBHOOK_RE = re.compile(
     r"^https://discord\.com/api/webhooks/(?P<webhook_id>\d+)/(?P<webhook_token>[A-Za-z0-9._-]+)$"
 )
 
+
 def get_discord_webhook_secret_redactor(url: str, *, mask: str = "****") -> Callable[[str], str]:
     m = _WEBHOOK_RE.match(url)
     if not m:

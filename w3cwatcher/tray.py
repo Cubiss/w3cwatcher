@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import ctypes
 import threading
-from logging import Logger
+from .logging import Logger
 from typing import Optional
 import win32api
 import win32event
@@ -14,6 +14,8 @@ import pystray
 from .config import Config, APP_NAME, TrayConfig
 from .monitor import Monitor
 from .notifier import Notifier
+from .utils import open_file
+from .utils.config_base import get_config_file
 
 
 class TrayApp:
@@ -23,14 +25,13 @@ class TrayApp:
     def __init__(self, logger: Logger, config: TrayConfig, monitor: Monitor):
         self.logger = logger
         self.config = config
-        self.monitor = monitor
+        self.monitor: Optional[Monitor] = monitor
 
         self._icon_red = self._icon_image(color=(200, 60, 60))
         self._icon_green = self._icon_image(color=(60, 200, 60))
 
         self._icon = pystray.Icon(APP_NAME, self._icon_red, APP_NAME)
         self._worker: Optional[threading.Thread] = None
-        self._monitor: Optional[Monitor] = None
 
         self._icon.menu = pystray.Menu(
             pystray.MenuItem("Start", self._start),
@@ -41,9 +42,9 @@ class TrayApp:
                     pystray.MenuItem("Check", self._check),
                     pystray.MenuItem("Log", self._log),
                     pystray.MenuItem("Settings", self._settings),
-                )
+                ),
             ),
-            pystray.MenuItem("Quit", self._quit)
+            pystray.MenuItem("Quit", self._quit),
         )
 
     @staticmethod
@@ -58,32 +59,24 @@ class TrayApp:
 
     def start(self):
         if self._worker and self._worker.is_alive():
-            print('Already running.')
+            self.logger.info("Already running.")
             return
 
-        print('Init for start.')
+        self.logger.info("Init for start.")
 
         def run_and_reset():
-            print('Starting watcher.')
-            self._monitor.run()
-            print('Watcher finished.')
+            self.logger.info("Starting watcher.")
+            self.monitor.run()
+            self.logger.info("Watcher finished.")
             self._icon.icon = self._icon_red
 
-        self._monitor = Monitor(self.logger, self.config, self.notifier)
         self._worker = threading.Thread(target=run_and_reset, daemon=True)
         self._worker.start()
-
-        # set icon green
         self._icon.icon = self._icon_green
 
     def _stop(self, _):
-        if self._monitor:
-            self._monitor.stop()
-        self._monitor = None
+        self.monitor.stop()
         self._worker = None
-
-        # set icon red
-        self._icon.icon = self._icon_red
 
     def _quit(self, _):
         self._stop(_)
@@ -92,42 +85,39 @@ class TrayApp:
     def _check(self, _):
         self._stop(_)
 
-        # wrapper so we know when finished
         def run_and_reset():
-            print('Starting watcher.')
-            self._monitor.run()
-            print('Watcher finished.')
+            self.monitor.show_debug_image()
             self._icon.icon = self._icon_red
 
-
-        self._monitor = Monitor(self.logger, self.config, self.notifier, check_only=True)
         self._worker = threading.Thread(target=run_and_reset, daemon=True)
         self._worker.start()
 
         self._icon.icon = self._icon_green
 
-
     def _log(self, _):
         # os.startfile(self.s.logfile)
-        os.system(f'start powershell -command "Get-Content \'{self.config.logfile}\' -Wait -Tail 40"')
+        os.system(f"start powershell -command \"Get-Content '{self.logger.latest_path}' -Wait -Tail 40\"")
 
     def _settings(self, _):
-        self.config.show()
+        path = get_config_file(path=self.config.get_file_path(), user_config=True, app_name=APP_NAME)
+        self.logger.info('Opening ', path)
+        open_file(path)
 
     def run(self):
         self.start()
         self._icon.run()
-
 
     def _ensure_single_instance(self) -> bool:
         self._singleton_mutex_handle = win32event.CreateMutex(None, False, self._mutex_name)
         return win32api.GetLastError() != winerror.ERROR_ALREADY_EXISTS
 
     @staticmethod
-    def _show_multiple_instances_error() -> None:
-        message = f"{APP_NAME} is already running.\n\n" \
-                   "Check your system tray, or start with --allow-multiple-instances if you really need another copy."
-        print(message)
+    def _show_multiple_instances_error(logger) -> None:
+        message = (
+            f"{APP_NAME} is already running.\n\n"
+            "Check your system tray, or start with --allow-multiple-instances if you really need another copy."
+        )
+        logger.warning(message)
         MB_OK = 0x00000000
         MB_ICONWARNING = 0x00000030
         MB_SYSTEMMODAL = 0x00001000  # ensure it shows even if no foreground window
@@ -140,10 +130,9 @@ class TrayApp:
         return
 
     @staticmethod
-    def create(logger: Logger, config: Config, notifier: Notifier) -> (TrayApp | None):
-        if not (config.allow_multiple_instances or TrayApp._ensure_single_instance()):
-            TrayApp._show_multiple_instances_error()
+    def create(logger: Logger, config: Config, notifier: Notifier) -> TrayApp | None:
+        if not (config.tray.allow_multiple_instances or TrayApp._ensure_single_instance()):
+            TrayApp._show_multiple_instances_error(logger)
             return None
 
         return TrayApp(logger, config, notifier)
-

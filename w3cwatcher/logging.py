@@ -9,23 +9,14 @@ from typing import Callable, Optional, Dict
 
 from platformdirs import user_log_dir
 
-from w3cwatcher.config import APP_NAME, Config
-
-ALLOWED_LOG_LEVELS = (
-    'CRITICAL',
-    'FATAL',
-    'ERROR',
-    'WARN',
-    'WARNING',
-    'INFO',
-    'DEBUG'
-)
+from w3cwatcher.config import APP_NAME, Config, LoggingConfig
 
 
 class RedactingFormatter(logging.Formatter):
     """
     Wraps another formatter; post-processes the rendered string with a redactor.
     """
+
     def __init__(self, base_formatter: logging.Formatter, redactor: Callable[[str], str]):
         super().__init__(fmt=base_formatter._fmt, datefmt=base_formatter.datefmt)
         self._base = base_formatter
@@ -70,8 +61,10 @@ class Logger:
         )
 
         # Idempotent: only add our file handlers once per process
-        if not any(isinstance(h, logging.FileHandler) and getattr(h, "_w3cwatcher_file", False)
-                   for h in self.logger.handlers):
+        if not any(
+            isinstance(h, logging.FileHandler) and getattr(h, "_w3cwatcher_file", False)
+            for h in self.logger.handlers
+        ):
             self._add_file_handlers()
 
         self._prune_old_logs()
@@ -81,10 +74,7 @@ class Logger:
     # ---------- public helpers ----------
 
     @classmethod
-    def from_config(cls, config: Config, app_name: str = APP_NAME) -> "Logger":
-        """
-        Build from your existing Config (expects .log_level and .log_keep).
-        """
+    def from_config(cls, config: LoggingConfig, app_name: str = APP_NAME) -> Logger:
         key = f"{app_name}"
         if key in cls._instances:
             inst = cls._instances[key]
@@ -98,9 +88,6 @@ class Logger:
         cls._instances[key] = inst
         return inst
 
-    def get_logger(self) -> logging.Logger:
-        return self.logger
-
     def set_level(self, level: str | int) -> None:
         lvl = getattr(logging, str(level).upper(), level)
         self.logger.setLevel(lvl)
@@ -108,11 +95,10 @@ class Logger:
             h.setLevel(logging.DEBUG if isinstance(h, logging.FileHandler) else lvl)
 
     def add_console(self, level: str | int = "INFO") -> None:
-        """
-        Add a console (stream) handler if not already present.
-        """
-        if not any(isinstance(h, logging.StreamHandler) and getattr(h, "_w3cwatcher_console", False)
-                   for h in self.logger.handlers):
+        if not any(
+            isinstance(h, logging.StreamHandler) and getattr(h, "_w3cwatcher_console", False)
+            for h in self.logger.handlers
+        ):
             ch = logging.StreamHandler()
             ch.setFormatter(self._base_fmt)
             ch.setLevel(getattr(logging, str(level).upper(), level))
@@ -149,12 +135,8 @@ class Logger:
         if self.keep <= 0:
             return
         pattern = f"{self.app_name}_*.log"
-        files = sorted(
-            self.log_dir.glob(pattern),
-            key=lambda p: p.stat().st_mtime,
-            reverse=True
-        )
-        for old in files[self.keep:]:
+        files = sorted(self.log_dir.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True)
+        for old in files[self.keep :]:
             # noinspection PyBroadException
             try:
                 old.unlink(missing_ok=True)

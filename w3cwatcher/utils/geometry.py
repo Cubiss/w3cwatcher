@@ -5,6 +5,7 @@ from typing import Tuple
 Point = Tuple[int, int]
 Rect = Tuple[int, int, int, int]
 
+
 def crop_to_aspect_ratio(rect: Rect, aspect_ratio: float) -> Rect:
     if aspect_ratio <= 0:
         raise ValueError("aspect_ratio must be > 0")
