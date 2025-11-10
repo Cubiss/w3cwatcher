@@ -401,10 +401,10 @@ class ConfigBase:
                 cfg._source[name] = source
         return cfg
 
-    def save(self, path: Path | str = None, include_defaults=False, include_comments=True):
+    def save(self, path: Path | str = None, include_defaults=False, comment=True):
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        doc = self.as_toml(include_defaults=include_defaults, include_comments=include_comments)
+        doc = self.as_toml(include_defaults=include_defaults, comment='help_text' if comment else None)
 
         path.write_text(tomlkit.dumps(doc), encoding="utf-8")
 

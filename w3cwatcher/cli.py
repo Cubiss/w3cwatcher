@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 import tomlkit
 
 from .config import load_config, APP_NAME

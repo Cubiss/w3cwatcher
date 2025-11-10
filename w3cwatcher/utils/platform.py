@@ -4,7 +4,6 @@ import sys
 import ctypes
 from pathlib import Path
 from typing import Optional
-from platformdirs import user_config_dir
 import tkinter as tk
 from tkinter import messagebox
 

@@ -1,7 +1,7 @@
 __all__ = [
     "config",
     "notifier",
-    "monitor.py",
+    "monitor",
     "tray",
     "cli",
 ]
