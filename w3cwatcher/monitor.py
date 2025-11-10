@@ -6,20 +6,19 @@ import win32gui
 import win32con
 
 from . import utils
-from datetime import datetime
 from logging import Logger
 from .config import MonitorConfig
-from .notifier import Notifier
+from .statemanager import StateManager, STATE_WAITING, STATE_IN_QUEUE, STATE_IN_GAME, STATE_DISABLED
 from .utils import Point, show_error
 from .utils.platform import set_dpi_awareness
 
 
 class Monitor:
-    def __init__(self, logger: Logger, config: MonitorConfig, notifier: Notifier):
+    def __init__(self, logger: Logger, config: MonitorConfig, state_manager: StateManager):
         self.config = config
         self.logger = logger
         self._stop = False
-        self.notifier = notifier
+        self.state_manager = state_manager
 
     def stop(self):
         self._stop = True
@@ -58,7 +57,6 @@ class Monitor:
 
     def run(self):
         try:
-            self.notifier.config.validate_all()
             self.config.validate_all()
         except Exception as ex:
             self.logger.error(ex)
@@ -69,8 +67,7 @@ class Monitor:
         self._stop = False
 
         self.logger.info(f"Monitoring started")
-
-        queue_start = None
+        self.state_manager.update_state(STATE_WAITING)
         was_in_queue = False
 
         poll_rate_s = self.config.poll_s
@@ -89,13 +86,14 @@ class Monitor:
 
                 self.logger.debug(f"RGB={rgb} ({color_name}) -> in_queue={in_queue}, in_game={in_game}")
 
-                if not was_in_queue and in_queue:
-                    queue_start = datetime.now()
-                    self.logger.info("Queue detected.")
+                if in_queue and not was_in_queue:
+                    self.state_manager.update_state(STATE_IN_QUEUE)
 
-                if was_in_queue and in_game:
-                    self.logger.info("Match start detected.")
-                    self.notifier.notify_match_started(queue_duration=datetime.now() - queue_start)
+                if in_game and was_in_queue:
+                    self.state_manager.update_state(STATE_IN_GAME)
+
+                if was_in_queue and not in_queue and not in_game:
+                    self.state_manager.update_state(STATE_WAITING)
 
                 was_in_queue = in_queue and not in_game
                 poll_rate_s = self.config.reduced_poll_s if in_game else self.config.poll_s
@@ -104,6 +102,8 @@ class Monitor:
                 self.logger.error(e)
                 self._stop = True
                 break
+
+        self.state_manager.update_state(STATE_DISABLED)
 
     @dataclass
     class _WindowInfo:

@@ -57,22 +57,22 @@ def _validate_discord_webhook(url):
         return []
 
 
-class NotificationsConfig(ConfigBase):
-    discord_webhook_url: str = field(
+class DiscordConfig(ConfigBase):
+    match_started_message: str = field(
+        default="Match found!",
+        help_text="Discord message content to send on match found.",
+    )
+
+    webhook_url: str = field(
         default=None,
         help_text="Discord webhook URL for notifications.",
         validators=[_validate_discord_webhook],
     )
 
-    discord_debounce: int = field(
+    debounce: int = field(
         default=60,
         arg="--debounce",
         help_text="Minimum seconds between Discord webhook notifications.",
-    )
-
-    match_started_message: str = field(
-        default="Match found!",
-        help_text="Discord message content to send on match found.",
     )
 
 
@@ -97,6 +97,10 @@ class TrayConfig(ConfigBase):
     )
 
 
+class NotificationsConfig(ConfigBase):
+    discord: DiscordConfig = field(default_factory=DiscordConfig)
+
+
 class Config(ConfigBase):
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
     notifications: NotificationsConfig = field(default_factory=NotificationsConfig)
@@ -104,7 +108,7 @@ class Config(ConfigBase):
     tray: TrayConfig = field(default_factory=TrayConfig)
 
 
-def load_config() -> Tuple(argparse.Namespace, Config):
+def load_config() -> Tuple[argparse.Namespace, Config]:
     # Loads config based on priority:
     # 1. shell arguments
     # 2. file provided by --config shell argument
@@ -116,7 +120,7 @@ def load_config() -> Tuple(argparse.Namespace, Config):
         user_config=True, filename="config.default.toml", app_name=APP_NAME
     )
     if not default_config_file.exists():
-        config.save(default_config_file, include_defaults=True, include_comments=True)
+        config.save(default_config_file, include_defaults=True, comment='help_text')
 
     parser = Config.get_argument_parser()
     parser.add_argument("--config", type=str, help="Specify config file (defaults to user file).")

@@ -1,6 +1,6 @@
 __all__ = [
     "config",
-    "notifier",
+    "notificationmanager.py",
     "monitor",
     "tray",
     "cli",

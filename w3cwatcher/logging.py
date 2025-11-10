@@ -40,7 +40,7 @@ class Logger:
         log_level: str = "INFO",
         keep: int = 10,
         log_dir: Optional[Path] = None,
-    ) -> None:
+    ):
         self.app_name = app_name
         self.keep = keep
         self.log_dir = Path(log_dir) if log_dir else Path(user_log_dir(appname=app_name, appauthor=False))

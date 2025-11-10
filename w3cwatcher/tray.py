@@ -13,7 +13,7 @@ import pystray
 
 from .config import Config, APP_NAME, TrayConfig
 from .monitor import Monitor
-from .notifier import Notifier
+from .statemanager import StateManager, STATE_WAITING, STATE_DISABLED, STATE_IN_QUEUE
 from .utils import open_file
 from .utils.config_base import get_config_file
 
@@ -29,8 +29,10 @@ class TrayApp:
 
         self._icon_red = self._icon_image(color=(200, 60, 60))
         self._icon_green = self._icon_image(color=(60, 200, 60))
+        self._icon_grey = self._icon_image(color=(120, 120, 120))
+        self._icon_blue = self._icon_image(color=(60, 60, 200))
 
-        self._icon = pystray.Icon(APP_NAME, self._icon_red, APP_NAME)
+        self._icon = pystray.Icon(APP_NAME, self._icon_grey, APP_NAME)
         self._worker: Optional[threading.Thread] = None
 
         self._icon.menu = pystray.Menu(
@@ -47,6 +49,8 @@ class TrayApp:
             pystray.MenuItem("Quit", self._quit),
         )
 
+        self.monitor.state_manager.add_state_change_listener(self.on_monitor_state_change)
+
     @staticmethod
     def _icon_image(color=(200, 60, 60)) -> Image.Image:
         img = Image.new("RGB", (64, 64), color=(40, 40, 40))
@@ -62,17 +66,8 @@ class TrayApp:
             self.logger.info("Already running.")
             return
 
-        self.logger.info("Init for start.")
-
-        def run_and_reset():
-            self.logger.info("Starting watcher.")
-            self.monitor.run()
-            self.logger.info("Watcher finished.")
-            self._icon.icon = self._icon_red
-
-        self._worker = threading.Thread(target=run_and_reset, daemon=True)
+        self._worker = threading.Thread(target=self.monitor.run, daemon=True)
         self._worker.start()
-        self._icon.icon = self._icon_green
 
     def _stop(self, _):
         self.monitor.stop()
@@ -84,15 +79,8 @@ class TrayApp:
 
     def _check(self, _):
         self._stop(_)
-
-        def run_and_reset():
-            self.monitor.show_debug_image()
-            self._icon.icon = self._icon_red
-
-        self._worker = threading.Thread(target=run_and_reset, daemon=True)
+        self._worker = threading.Thread(target=self.monitor.show_debug_image, daemon=True)
         self._worker.start()
-
-        self._icon.icon = self._icon_green
 
     def _log(self, _):
         # os.startfile(self.s.logfile)
@@ -110,6 +98,17 @@ class TrayApp:
     def _ensure_single_instance(self) -> bool:
         self._singleton_mutex_handle = win32event.CreateMutex(None, False, self._mutex_name)
         return win32api.GetLastError() != winerror.ERROR_ALREADY_EXISTS
+
+    def on_monitor_state_change(self, new_state, _after):
+        if new_state == STATE_WAITING:
+            self._icon.icon = self._icon_green
+        elif new_state == STATE_IN_QUEUE:
+            self._icon.icon = self._icon_red
+        elif new_state == STATE_DISABLED:
+            self._icon.icon = self._icon_grey
+        else:
+            self._icon.icon = self._icon_blue
+        self._icon.title = f'{APP_NAME} - {new_state}'
 
     @staticmethod
     def _show_multiple_instances_error(logger) -> None:
@@ -130,7 +129,7 @@ class TrayApp:
         return
 
     @staticmethod
-    def create(logger: Logger, config: Config, notifier: Notifier) -> TrayApp | None:
+    def create(logger: Logger, config: Config, notifier: StateManager) -> TrayApp | None:
         if not (config.tray.allow_multiple_instances or TrayApp._ensure_single_instance()):
             TrayApp._show_multiple_instances_error(logger)
             return None

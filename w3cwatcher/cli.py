@@ -3,9 +3,10 @@ from __future__ import annotations
 import tomlkit
 
 from .config import load_config, APP_NAME
+from .discord_notifier import DiscordNotifier
 from .logging import Logger
 from .monitor import Monitor
-from .notifier import Notifier
+from .statemanager import StateManager
 from .tray import TrayApp
 from .utils.platform import create_tray_shortcut
 
@@ -20,8 +21,10 @@ def main():
     errors, message = config.validate_all(raise_error=False)
     logger.warning(message)
 
-    notifier = Notifier(logger=logger, config=config.notifications)
-    monitor = Monitor(logger=logger, config=config.monitor, notifier=notifier)
+    state_manager = StateManager(logger=logger)
+    monitor = Monitor(logger=logger, config=config.monitor, state_manager=state_manager)
+    notifier = DiscordNotifier(config=config.notifications.discord, logger=logger)
+    state_manager.add_state_change_listener(notifier.on_monitor_state_change)
 
     if args.config:
         pass
