@@ -112,7 +112,9 @@ def load_config() -> Tuple(argparse.Namespace, Config):
     # 4. user file %localappdata%/W3CWatcher/config.toml
 
     config = Config()
-    default_config_file = get_config_file(user_config=True, filename='config.default.toml', app_name=APP_NAME)
+    default_config_file = get_config_file(
+        user_config=True, filename="config.default.toml", app_name=APP_NAME
+    )
     if not default_config_file.exists():
         config.save(default_config_file, include_defaults=True, include_comments=True)
 
@@ -125,8 +127,8 @@ def load_config() -> Tuple(argparse.Namespace, Config):
 
     arg_config_file = getattr(args, "config", None)
     config_files = [
-        get_config_file(user_config=True,app_name=APP_NAME),
-        get_config_file(user_config=False,app_name=APP_NAME),
+        get_config_file(user_config=True, app_name=APP_NAME),
+        get_config_file(user_config=False, app_name=APP_NAME),
     ]
 
     if arg_config_file:
@@ -134,7 +136,7 @@ def load_config() -> Tuple(argparse.Namespace, Config):
 
     for file in config_files:
         if file.exists():
-            print('Loading ', file)
+            print("Loading ", file)
             args_cfg = Config.from_file(file)
             config.update_from(args_cfg)
 

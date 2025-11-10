@@ -27,4 +27,12 @@ packages = ["w3cwatcher"]
 line-length = 107
 target-version = ['py311']
 include = '\.pyi?$'
-exclude = '\.git | \.venv | venv | build | dist'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | build
+  | dist
+)/
+'''

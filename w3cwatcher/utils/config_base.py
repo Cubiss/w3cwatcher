@@ -40,6 +40,7 @@ DEFAULT_SOURCE = "default"
 
 NodeKind = Literal["scalar", "table"]
 
+
 @dataclass(frozen=True)
 class ScalarNode:
     name: str
@@ -48,6 +49,7 @@ class ScalarNode:
     source: Optional[str] = None
     kind: NodeKind = dc_field(default="scalar", init=False)
 
+
 @dataclass(frozen=True)
 class TableNode:
     name: str
@@ -55,11 +57,13 @@ class TableNode:
     help_text: Optional[str] = None
     kind: NodeKind = dc_field(default="table", init=False)
 
+
 Node = Union[ScalarNode, TableNode]
 
 
 class TDoNotSerialize:
     pass
+
 
 DO_NOT_SERIALIZE = TDoNotSerialize()
 
@@ -245,7 +249,7 @@ class ConfigBase:
 
             name = f.name
 
-            if name.startswith('_'):
+            if name.startswith("_"):
                 continue
 
             if not arg:
@@ -264,7 +268,9 @@ class ConfigBase:
                     description=help_text,
                 )
             elif f_type is bool:
-                parser.add_argument(arg, dest=name, action="store_true", default=argparse.SUPPRESS, help=help_text)
+                parser.add_argument(
+                    arg, dest=name, action="store_true", default=argparse.SUPPRESS, help=help_text
+                )
             else:
                 parser.add_argument(arg, dest=name, type=f_type, default=argparse.SUPPRESS, help=help_text)
 
@@ -274,7 +280,7 @@ class ConfigBase:
         cls.add_argument_group(parser)
         return parser
 
-    def _iter_fields(self, include_defaults: bool, only_serializable: bool=False):
+    def _iter_fields(self, include_defaults: bool, only_serializable: bool = False):
         for f in fields(self):
             name = f.name
             if name.startswith("_"):
@@ -318,7 +324,9 @@ class ConfigBase:
 
         return build(self._walk(include_defaults))
 
-    def as_toml(self, include_defaults: bool, comment: Literal[None, 'help_text','source']=None, _table=None):
+    def as_toml(
+        self, include_defaults: bool, comment: Literal[None, "help_text", "source"] = None, _table=None
+    ):
         def fill(table, nodes: Iterable[Node]) -> None:
             for node in nodes:
                 if isinstance(node, TableNode):
@@ -327,14 +335,14 @@ class ConfigBase:
                     fill(sub, node.children)
                     table.add(node.name, sub)
 
-                    if comment == 'help_text' and node.help_text:
+                    if comment == "help_text" and node.help_text:
                         table[node.name].comment(node.help_text)
                 else:
                     node: ScalarNode
-                    item = tomlkit.item('' if node.value is None else node.value)
-                    if comment == 'help_text' and node.help_text:
+                    item = tomlkit.item("" if node.value is None else node.value)
+                    if comment == "help_text" and node.help_text:
                         item.comment(node.help_text)
-                    elif comment == 'source':
+                    elif comment == "source":
                         item.comment(str(node.source))
 
                     table.add(node.name, item)
@@ -410,7 +418,7 @@ class ConfigBase:
             my_val = getattr(self, name)
             their_val = getattr(other, name, None)
 
-            if name == 'discord_webhook_url':
+            if name == "discord_webhook_url":
                 pass
 
             if self._is_config(f):
@@ -476,7 +484,9 @@ class ConfigBase:
         return None
 
 
-def get_config_file(path: Path | str = None, filename: str='config.toml', user_config: bool = False, app_name: str = None) -> Path:
+def get_config_file(
+    path: Path | str = None, filename: str = "config.toml", user_config: bool = False, app_name: str = None
+) -> Path:
     app_name = app_name or get_app_name()
     if path is not None:
         file = Path(path)
@@ -487,6 +497,7 @@ def get_config_file(path: Path | str = None, filename: str='config.toml', user_c
 
     file.parent.mkdir(parents=True, exist_ok=True)
     return file
+
 
 def get_app_name() -> str:
     if getattr(sys, "frozen", False):

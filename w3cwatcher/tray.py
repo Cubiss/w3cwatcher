@@ -100,7 +100,7 @@ class TrayApp:
 
     def _settings(self, _):
         path = get_config_file(path=self.config.get_file_path(), user_config=True, app_name=APP_NAME)
-        self.logger.info('Opening ', path)
+        self.logger.info("Opening ", path)
         open_file(path)
 
     def run(self):

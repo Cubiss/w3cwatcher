@@ -82,7 +82,7 @@ class Monitor:
                     time.sleep(poll_rate_s)
                     continue
 
-                in_game = (window_info.hwnd_warcraft3 is not None)
+                in_game = window_info.hwnd_warcraft3 is not None
                 rgb = utils.grab_pixel_rgb(*window_info.watched_screen_pos)
                 color_name = utils.name_color(*rgb)
                 in_queue = color_name == self.config.in_queue_color
@@ -118,7 +118,7 @@ class Monitor:
         def _wait():
             nonlocal waiting
             if not waiting:
-                self.logger.info('Waiting for W3C window...')
+                self.logger.info("Waiting for W3C window...")
                 waiting = True
             time.sleep(poll_rate_s)
 
@@ -160,7 +160,7 @@ class Monitor:
                 continue
 
             if waiting:
-                self.logger.info('W3C Window detected.')
+                self.logger.info("W3C Window detected.")
 
             return Monitor._WindowInfo(
                 hwnd_w3c=hwnd_w3c,

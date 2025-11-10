@@ -16,7 +16,7 @@ def main():
     args, config = load_config()
     logger = Logger.from_config(config.logging)
 
-    doc = config.as_toml(include_defaults=True, comment='source')
+    doc = config.as_toml(include_defaults=True, comment="source")
     logger.debug(tomlkit.dumps(doc))
 
     errors, message = config.validate_all(raise_error=False)
