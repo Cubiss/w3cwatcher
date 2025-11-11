@@ -14,6 +14,7 @@ if _IS_WINDOWS:
     import win32con
     import win32api
     from win32com.client import Dispatch
+    from win32com.shell import shell
 
     # GetAncestor flags (not all exposed in win32con)
     GA_PARENT = 1
@@ -82,7 +83,7 @@ def create_tray_shortcut(
         target_exe = os.path.abspath(target_exe)
     working_dir = working_dir or os.path.dirname(target_exe)
 
-    desktop = win32api.SHGetFolderPath(0, win32con.CSIDL_DESKTOP, None, 0)
+    desktop = shell.SHGetFolderPath(0, win32con.CSIDL_DESKTOP, None, 0)
     shortcut_path = os.path.join(desktop, shortcut_name)
 
     shell = Dispatch("WScript.Shell")
