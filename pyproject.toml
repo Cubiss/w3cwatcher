@@ -22,7 +22,7 @@ dependencies = [
 w3cwatcher = "w3cwatcher.cli:main"
 
 [tool.setuptools]
-packages = ["w3cwatcher"]
+packages = ["w3cwatcher", "w3cwatcher.utils"]
 
 [tool.black]
 line-length = 107
