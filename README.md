@@ -4,6 +4,8 @@ W3C Watcher is a lightweight background pixel-monitoring utility for
 Windows.\
 It checks for the color of the W3Champions match button and sends a discord notification when it detects change from in-queue to not-in-queue. 
 
+Currently supports Windows only.  
+
 ------------------------------------------------------------------------
 
 ## Installation
@@ -27,8 +29,13 @@ Right-click the tray icon to configure:
 -   Start - starts monitoring (Icon turns green if successful)  
 -   Stop - stops monitoring
 -   Tools/Check - opens image showing what W3CWatcher sees  
--   Tools/Log - opens log console
+-   Tools/Log - tails log file
 -   Tools/Settings - opens settings file
+
+Icon color:
+- Green - Ready
+- Red - In Queue
+- Grey - Disabled
 
 ### CLI Mode
 
@@ -40,12 +47,6 @@ Watch a pixel in a window and notify via Discord
 
 options:
   -h, --help           show this help message and exit
-  --title TITLE        Substring to match target window title
-  --x X                Client X offset (0.5 = middle, 1.0 = left)
-  --y Y                Client Y offset (0.5 = middle), 1.0 = bottom
-  --poll POLL          Polling rate (s)
-  --debounce DEBOUNCE  Minimum seconds between webhooks
-  --message MESSAGE    Discord message content
   --webhook WEBHOOK    Discord webhook URL
   --tray               Run as a system tray app
   --check              Check currently captured rectangle
@@ -68,16 +69,7 @@ options:
 9.  Paste your url into `discord_webhook_url` field
 
 The config file should look like this:
-```json
-{
-  "window_title_keyword": "W3Champions",
-  "x_offset_pct": 0.755,
-  "y_offset_pct": 0.955,
-  "in_queue_color": "red",
-  "poll_s": 5,
-  "debounce_seconds": 60,
-  "discord_message": "Match found!",
-  "discord_webhook_url": "https://discord.com/api/webhooks/<webhook_id>/<webhook_token>",
-  "inner_rectangle_aspect_ratio": 1.775
-}
+```toml config.toml
+[notifications.discord]
+webhook_url = "https://discord.com/api/webhooks/.../..."
 ```

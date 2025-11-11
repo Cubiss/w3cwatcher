@@ -1,116 +1,151 @@
 from __future__ import annotations
 
-import logging
-import os
-import json
-import subprocess
-import sys
-from dataclasses import dataclass, asdict, fields, field
-from typing import Any, Dict
+import argparse
+import re
 from pathlib import Path
-from platformdirs import user_config_dir
+from typing import Tuple
+
+from .utils.config_base import ConfigBase, field, get_allowed_values_validator, get_config_file
 
 APP_NAME = "W3CWatcher"
 
-@dataclass
-class Settings:
-    w3champions_window_title: str = "W3Champions"
-    warcraft3_window_title: str = "Warcraft III"
-    x_offset_pct: float = 0.755
-    y_offset_pct: float = 0.955
-    in_queue_color: str = "red"
-    ready_color: str = "green"
-    poll_s: int = 1
-    reduced_poll_s: int = 5
-    debounce_seconds: int = 60
-    discord_message: str = "Match found!"
-    discord_webhook_url: str = field(default='', metadata={"serialize": False})
-    inner_rectangle_aspect_ratio: float = 1846 / 1040
-    allow_multiple_instances: bool = False
-    log_level: str = "INFO"
-    log_keep: int = 10
-    logfile: Path = field(default=None, metadata={"serialize": False})
-    logger: logging.Logger = field(default=None, metadata={"serialize": False})
 
-    def __str__(self):
-        serializable = {}
-        for f in fields(self):
-            if f.metadata.get("serialize", True):
-                serializable[f.name] = getattr(self, f.name)
-        return json.dumps(serializable, indent=2)
+class MonitorConfig(ConfigBase):
+    w3champions_window_title: str = field(
+        default="W3Champions",
+        arg="--title",
+        help_text="Substring to match target window title.",
+    )
 
+    warcraft3_window_title: str = field(
+        default="Warcraft III",
+        help_text="Default Warcraft III window title (used for fallback).",
+    )
 
-def _config_file_dir() -> Path:
-    return Path(user_config_dir(APP_NAME, appauthor=False))
+    x_offset_pct: float = field(
+        default=0.755,
+        arg="--x",
+        help_text="Client X offset (0.5 = middle, 1.0 = right).",
+    )
 
+    y_offset_pct: float = field(
+        default=0.955,
+        arg="--y",
+        help_text="Client Y offset (0.5 = middle, 1.0 = bottom).",
+    )
 
-def config_file_path() -> Path:
-    return _config_file_dir() / "config.json"
+    enforced_window_aspect_ratio: float = field(
+        default=1846 / 1040,
+        help_text="Aspect ratio for the inner rectangle of the window capture.",
+    )
 
+    in_queue_color: str = field(default="red", help_text="Color used to detect when in queue.")
 
-def _coerce_types_into_settings(data: Dict[str, Any]) -> Settings:
-    """Create a Settings instance from a dict, coercing basic types where sensible."""
-    field_types = {f.name: f.type for f in fields(Settings)}
-    kwargs: Dict[str, Any] = {}
-    for name, tp in field_types.items():
-        if name in data:
-            val = data[name]
-            if tp is float:
-                try:
-                    val = float(val)
-                except Exception:
-                    pass
-            elif tp is int:
-                try:
-                    val = int(val)
-                except Exception:
-                    pass
-            elif tp is str and val is not None:
-                val = str(val)
-            kwargs[name] = val
-    return Settings(**{**asdict(Settings()), **kwargs})
+    ready_color: str = field(default="green", help_text="Color used to detect when the match is ready.")
+
+    poll_s: int = field(default=1, arg="--poll", help_text="Polling rate in seconds.")
+
+    reduced_poll_s: int = field(default=5, help_text="Reduced polling rate when idle (seconds).")
 
 
-def ensure_user_config() -> Path:
-    cfg_dir = _config_file_dir()
-    cfg_dir.mkdir(parents=True, exist_ok=True)
-    cfg_file = config_file_path()
-
-    if not cfg_file.exists():
-        defaults = asdict(Settings())
-        cfg_file.write_text(json.dumps(defaults, indent=2), encoding="utf-8")
-
-    return cfg_file
+def _validate_discord_webhook(url):
+    if url is None:
+        return ["You must set discord webhook url first."]
+    elif not re.match(r"^https://(discord\.com)/api/webhooks/\d+/[\w-]+$", url):
+        return ["Invalid webhook URL format."]
+    else:
+        return []
 
 
-def load_user_config(create_if_missing: bool = True) -> Settings:
-    if create_if_missing:
-        ensure_user_config()
+class DiscordConfig(ConfigBase):
+    match_started_message: str = field(
+        default="Match found!",
+        help_text="Discord message content to send on match found.",
+    )
 
-    cfg_file = config_file_path()
-    loaded: Dict[str, Any] = {}
-    if cfg_file.exists():
-        try:
-            loaded = json.loads(cfg_file.read_text(encoding="utf-8"))
-        except Exception as ex:
-            print("ERROR: Could not load config file:", ex)
-            loaded = {}
+    webhook_url: str = field(
+        default=None,
+        help_text="Discord webhook URL for notifications.",
+        validators=[_validate_discord_webhook],
+    )
 
-    # Merge file values into defaults
-    settings = _coerce_types_into_settings(loaded)
-
-    return settings
+    debounce: int = field(
+        default=60,
+        arg="--debounce",
+        help_text="Minimum seconds between Discord webhook notifications.",
+    )
 
 
-def open_user_config():
-    cfg_path = ensure_user_config()
+class LoggingConfig(ConfigBase):
+    log_level: str = field(
+        default="INFO",
+        help_text="Logging level (DEBUG, INFO, WARNING, ERROR).",
+        validators=get_allowed_values_validator(
+            "CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", "DEBUG"
+        ),
+    )
 
-    try:
-        if os.name == "nt":  # Windows
-            os.startfile(cfg_path)  # type: ignore[attr-defined]
-        else:
-            opener = "open" if sys.platform == "darwin" else "xdg-open"
-            subprocess.Popen([opener, str(cfg_path)])
-    except Exception as e:
-        print(f"Could not open config file automatically: {e}")
-        print(f"Config file path: {cfg_path}")
+    log_keep: int = field(default=10, help_text="Number of old log files to keep. -1 for no cleanup")
+
+    log_dir: Path = field(default=None, help_text="Logging directory.")
+
+
+class TrayConfig(ConfigBase):
+    autostart: bool = field(default=False, help_text="Whether the tray app should autostart with Windows.")
+    allow_multiple_instances: bool = field(
+        default=False, help_text="[Tray] Disable single instance check."
+    )
+
+
+class NotificationsConfig(ConfigBase):
+    discord: DiscordConfig = field(default_factory=DiscordConfig)
+
+
+class Config(ConfigBase):
+    monitor: MonitorConfig = field(default_factory=MonitorConfig)
+    notifications: NotificationsConfig = field(default_factory=NotificationsConfig)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
+    tray: TrayConfig = field(default_factory=TrayConfig)
+
+
+def load_config() -> Tuple[argparse.Namespace, Config]:
+    # Loads config based on priority:
+    # 1. shell arguments
+    # 2. file provided by --config shell argument
+    # 3. local file ./w3cwatcher.config.toml
+    # 4. user file %localappdata%/W3CWatcher/config.toml
+
+    config = Config()
+    default_config_file = get_config_file(
+        user_config=True, filename="config.default.toml", app_name=APP_NAME
+    )
+    if not default_config_file.exists():
+        config.save(default_config_file, include_defaults=True, comment='help_text')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, help="Specify config file (defaults to user file).")
+    parser.add_argument("--tray", action="store_true", help="Run as a system tray app")
+    parser.add_argument("--check", action="store_true", help="Check currently captured rectangle")
+    parser.add_argument("--shortcut", action="store_true", help="Create a desktop shortcut for Tray")
+    Config.fill_arg_parse(parser)
+    args = parser.parse_args()
+
+    arg_config_file = getattr(args, "config", None)
+    config_files = [
+        get_config_file(user_config=True, app_name=APP_NAME),
+        get_config_file(user_config=False, app_name=APP_NAME),
+    ]
+
+    if arg_config_file:
+        config_files.append(arg_config_file)
+
+    for file in config_files:
+        if file.exists():
+            print("Loading ", file)
+            args_cfg = Config.from_file(file)
+            config.update_from(args_cfg)
+
+    args_cfg = Config.from_args(args)
+    config.update_from(args_cfg)
+
+    return args, config
