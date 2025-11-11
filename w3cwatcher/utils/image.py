@@ -17,7 +17,11 @@ def hwnd_relative_to_screen_xy(
     if not (0.0 <= x_relative_ltr <= 100.0 and 0.0 <= y_relative_ttb <= 100.0):
         raise ValueError("x_relative_ltr and y_relative_ttb must be in the 0..100 range")
 
-    client_bbox = get_client_bbox_in_screen(hwnd)
+    try:
+        client_bbox = get_client_bbox_in_screen(hwnd)
+    except RuntimeError:
+        return (0,0), (0,0)
+
     if aspect_ratio is not None:
         client_bbox = crop_to_aspect_ratio(client_bbox, aspect_ratio)
 

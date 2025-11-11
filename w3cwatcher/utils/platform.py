@@ -25,7 +25,7 @@ if _IS_WINDOWS:
     PROCESS_PER_MONITOR_DPI_AWARE = 2
 
 
-def _ensure_windows() -> None:
+def ensure_windows() -> None:
     if not _IS_WINDOWS:
         raise NotImplementedError("This function is only supported on Windows.")
 
@@ -68,13 +68,14 @@ def open_file(file: Path | str) -> None:
         subprocess.Popen(["xdg-open", str(file)])
 
 
+# noinspection PyUnresolvedReferences,SpellCheckingInspection
 def create_tray_shortcut(
     target_exe: Optional[str] = None,
     shortcut_name: str = f"W3Champions.lnk",
     working_dir: Optional[str] = None,
     icon_path: Optional[str] = None,
 ) -> str:
-    _ensure_windows()
+    ensure_windows()
 
     target_exe = target_exe or sys.executable
     if not os.path.isabs(target_exe):

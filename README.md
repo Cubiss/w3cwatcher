@@ -4,6 +4,8 @@ W3C Watcher is a lightweight background pixel-monitoring utility for
 Windows.\
 It checks for the color of the W3Champions match button and sends a discord notification when it detects change from in-queue to not-in-queue. 
 
+Currently supports Windows only.  
+
 ------------------------------------------------------------------------
 
 ## Installation

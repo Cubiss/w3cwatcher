@@ -6,9 +6,9 @@ import win32gui
 import win32con
 
 from . import utils
-from logging import Logger
+from .logging import Logger
 from .config import MonitorConfig
-from .statemanager import StateManager, STATE_WAITING, STATE_IN_QUEUE, STATE_IN_GAME, STATE_DISABLED
+from .state_manager import StateManager, STATE_WAITING, STATE_IN_QUEUE, STATE_IN_GAME, STATE_DISABLED
 from .utils import Point, show_error
 from .utils.platform import set_dpi_awareness
 
@@ -156,7 +156,6 @@ class Monitor:
                     self.logger.debug(f"[skip] {screen_pos} could not check pixel ownership: {ex}")
 
                 _wait()
-                time.sleep(self.config.poll_s)
                 continue
 
             if waiting:

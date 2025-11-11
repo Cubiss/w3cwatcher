@@ -13,8 +13,9 @@ dependencies = [
     "pillow>=9.0",
     "requests>=2.28",
     "platformdirs>=3.0",
+    "tomlkit>=0.12",
     "pywin32>=306; platform_system == 'Windows'",
-    "pystray>=0.19; platform_system == 'Windows'",
+    "pystray>=0.19; platform_system == 'Windows'"
 ]
 
 [project.scripts]

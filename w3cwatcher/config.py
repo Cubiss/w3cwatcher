@@ -51,7 +51,7 @@ class MonitorConfig(ConfigBase):
 def _validate_discord_webhook(url):
     if url is None:
         return ["You must set discord webhook url first."]
-    elif not re.match(r"^https://(discord(app)?\.com)/api/webhooks/\d+/[\w-]+$", url):
+    elif not re.match(r"^https://(discord\.com)/api/webhooks/\d+/[\w-]+$", url):
         return ["Invalid webhook URL format."]
     else:
         return []
@@ -122,11 +122,12 @@ def load_config() -> Tuple[argparse.Namespace, Config]:
     if not default_config_file.exists():
         config.save(default_config_file, include_defaults=True, comment='help_text')
 
-    parser = Config.get_argument_parser()
+    parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, help="Specify config file (defaults to user file).")
     parser.add_argument("--tray", action="store_true", help="Run as a system tray app")
     parser.add_argument("--check", action="store_true", help="Check currently captured rectangle")
     parser.add_argument("--shortcut", action="store_true", help="Create a desktop shortcut for Tray")
+    Config.fill_arg_parse(parser)
     args = parser.parse_args()
 
     arg_config_file = getattr(args, "config", None)

@@ -8,7 +8,7 @@ import requests
 
 from .config import DiscordConfig
 from .logging import Logger
-from .statemanager import STATE_DISABLED, STATE_WAITING, STATE_IN_QUEUE, STATE_IN_GAME
+from .state_manager import STATE_IN_GAME
 
 
 class DiscordNotifier:

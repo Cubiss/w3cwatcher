@@ -11,9 +11,9 @@ import winerror
 from PIL import Image, ImageDraw
 import pystray
 
-from .config import Config, APP_NAME, TrayConfig
+from .config import APP_NAME, TrayConfig
 from .monitor import Monitor
-from .statemanager import StateManager, STATE_WAITING, STATE_DISABLED, STATE_IN_QUEUE
+from .state_manager import STATE_WAITING, STATE_DISABLED, STATE_IN_QUEUE
 from .utils import open_file
 from .utils.config_base import get_config_file
 
@@ -88,15 +88,17 @@ class TrayApp:
 
     def _settings(self, _):
         path = get_config_file(path=self.config.get_file_path(), user_config=True, app_name=APP_NAME)
-        self.logger.info("Opening ", path)
+        self.logger.info(f"Opening {path}")
         open_file(path)
 
     def run(self):
         self.start()
         self._icon.run()
 
-    def _ensure_single_instance(self) -> bool:
-        self._singleton_mutex_handle = win32event.CreateMutex(None, False, self._mutex_name)
+    @staticmethod
+    def _ensure_single_instance() -> bool:
+        # noinspection PyTypeChecker
+        TrayApp._singleton_mutex_handle = win32event.CreateMutex(None, False, TrayApp._mutex_name)
         return win32api.GetLastError() != winerror.ERROR_ALREADY_EXISTS
 
     def on_monitor_state_change(self, new_state, _after):
@@ -110,6 +112,7 @@ class TrayApp:
             self._icon.icon = self._icon_blue
         self._icon.title = f'{APP_NAME} - {new_state}'
 
+    # noinspection PyPep8Naming,SpellCheckingInspection,PyUnresolvedReferences
     @staticmethod
     def _show_multiple_instances_error(logger) -> None:
         message = (
@@ -129,9 +132,9 @@ class TrayApp:
         return
 
     @staticmethod
-    def create(logger: Logger, config: Config, notifier: StateManager) -> TrayApp | None:
-        if not (config.tray.allow_multiple_instances or TrayApp._ensure_single_instance()):
+    def create_singleton(logger: Logger, config: TrayConfig, monitor: Monitor) -> TrayApp | None:
+        if not (config.allow_multiple_instances or TrayApp._ensure_single_instance()):
             TrayApp._show_multiple_instances_error(logger)
             return None
 
-        return TrayApp(logger, config, notifier)
+        return TrayApp(logger, config, monitor)

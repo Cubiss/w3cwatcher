@@ -6,7 +6,7 @@ from .config import load_config, APP_NAME
 from .discord_notifier import DiscordNotifier
 from .logging import Logger
 from .monitor import Monitor
-from .statemanager import StateManager
+from .state_manager import StateManager
 from .tray import TrayApp
 from .utils.platform import create_tray_shortcut
 
@@ -19,21 +19,20 @@ def main():
     logger.debug(tomlkit.dumps(doc))
 
     errors, message = config.validate_all(raise_error=False)
-    logger.warning(message)
+    if len(errors) > 0:
+        logger.warning(message)
 
     state_manager = StateManager(logger=logger)
     monitor = Monitor(logger=logger, config=config.monitor, state_manager=state_manager)
     notifier = DiscordNotifier(config=config.notifications.discord, logger=logger)
     state_manager.add_state_change_listener(notifier.on_monitor_state_change)
 
-    if args.config:
-        pass
-    elif args.shortcut:
+    if args.shortcut:
         create_tray_shortcut(shortcut_name=f"{APP_NAME}.lnk")
     elif args.check:
         monitor.show_debug_image()
     elif args.tray:
-        tray = TrayApp(logger=logger, config=config.tray, monitor=monitor)
+        tray = TrayApp.create_singleton(logger=logger, config=config.tray, monitor=monitor)
         tray.run()
     else:
         monitor.run()

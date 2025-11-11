@@ -9,7 +9,7 @@ from typing import Callable, Optional, Dict
 
 from platformdirs import user_log_dir
 
-from w3cwatcher.config import APP_NAME, Config, LoggingConfig
+from w3cwatcher.config import APP_NAME, LoggingConfig
 
 
 class RedactingFormatter(logging.Formatter):
@@ -86,6 +86,7 @@ class Logger:
             keep=getattr(config, "log_keep", 10),
         )
         cls._instances[key] = inst
+        inst.add_console(config.log_level)
         return inst
 
     def set_level(self, level: str | int) -> None:

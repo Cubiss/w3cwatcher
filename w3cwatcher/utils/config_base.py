@@ -26,8 +26,6 @@ from typing import (
 
 from platformdirs import user_config_dir
 
-VALIDATION_ERRORS_ON_SETATTR = True
-
 FIELD_ARG = "arg"
 FIELD_HELP_TEXT = "help_text"
 FIELD_SERIALIZER = "serializer"
@@ -155,10 +153,10 @@ def field(
 
 @dataclass
 class ConfigBase:
-    # Shared across all instances
+    VALIDATION_ERRORS_ON_SETATTR = True
+
     _initialized: ClassVar[Set] = set()
 
-    # Unique per instance
     _source: Dict[str, str] = field(default_factory=dict)
     _modified: Set[str] = field(default_factory=set)
     _validation_errors: Dict[str, "ValidationError"] = field(default_factory=dict)
@@ -188,7 +186,7 @@ class ConfigBase:
 
         errors = self.validate_field(fld, value)
         self._validation_errors[fld.name] = errors
-        if VALIDATION_ERRORS_ON_SETATTR and len(errors):
+        if ConfigBase.VALIDATION_ERRORS_ON_SETATTR and len(errors):
             msg = "\n".join(f"- {m}" for m in errors)
             raise ValueError(f"Validation failed:\n{msg}")
 
@@ -232,7 +230,7 @@ class ConfigBase:
         return f.default_factory != MISSING and issubclass(f.default_factory, ConfigBase)
 
     @classmethod
-    def add_argument_group(
+    def fill_arg_parse(
         cls,
         parser: argparse.ArgumentParser,
         namespace: str = "",
@@ -262,7 +260,7 @@ class ConfigBase:
             f_type = cls._get_field_type(f)
 
             if cls._is_config(f):
-                f.default_factory.add_argument_group(
+                f.default_factory.fill_arg_parse(
                     group,
                     namespace=f"{namespace}.{name}" if arg == AUTO_ARG else arg,
                     description=help_text,
@@ -277,7 +275,7 @@ class ConfigBase:
     @classmethod
     def get_argument_parser(cls, *args, **kwargs) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(*args, **kwargs)
-        cls.add_argument_group(parser)
+        cls.fill_arg_parse(parser)
         return parser
 
     def _iter_fields(self, include_defaults: bool, only_serializable: bool = False):
@@ -375,6 +373,7 @@ class ConfigBase:
     @classmethod
     def from_file(cls, file: Path | str) -> Self:
         loaded = tomlkit.loads(file.read_text(encoding="utf-8"))
+        # noinspection PyTypeChecker
         cfg = cls.from_dict(loaded, source=file)
         cfg._file_path = file
         return cfg
@@ -383,19 +382,22 @@ class ConfigBase:
         return self._file_path
 
     @classmethod
-    def from_dict(cls, loaded: Serializable, validate: bool = False, source: Any = "from_dict") -> Self:
+    def from_dict(cls, config_dict: Dict[Serializable], validate: bool = False, source: Any = "from_dict") -> Self:
         cfg = cls()
         # noinspection PyTypeChecker
         for fld in fields(cls):
             name = fld.name
-            if name in loaded:
+            if name in config_dict:
+                value = config_dict[name]
                 if cls._is_config(fld):
-                    instance: ConfigBase = cls._get_field_type(fld).from_dict(loaded[name], source=source)
+                    instance: ConfigBase = cls._get_field_type(fld).from_dict(value, validate=validate, source=source)
                     setattr(cfg, name, instance)
                     if len(instance._modified) > 0:
                         cfg._modified.add(name)
                 else:
-                    setattr(cfg, name, cls._get_field_type(fld)(loaded[name]))
+                    if validate:
+                        cls.validate_field(fld, value)
+                    setattr(cfg, name, cls._get_field_type(fld)(value))
                     cfg._modified.add(name)
 
                 cfg._source[name] = source
@@ -444,20 +446,25 @@ class ConfigBase:
 
     def validate_all(self, raise_error: bool = True) -> Tuple[ValidationError, str]:
         # noinspection PyTypeChecker
+        validation_errors = {}
         for f in fields(self):
+            if f.name.startswith('_'):
+                continue
             if self._is_config(f):
                 cfg: ConfigBase = getattr(self, f.name)
-                self._validation_errors[f.name], _ = cfg.validate_all(raise_error=False)
+                errors, _ = cfg.validate_all(raise_error=False)
+                if len(errors) > 0:
+                    validation_errors[f.name], _ = cfg.validate_all(raise_error=False)
 
-            self._validation_errors[f.name] = self.validate_field(
-                f, getattr(self, f.name, None), raise_error=False
-            )
+            errors = self.validate_field(f, getattr(self, f.name, None), raise_error=False)
+            if len(errors) > 0:
+                validation_errors[f.name] = errors
 
-        if validation_message := self._get_validation_message(self._validation_errors):
+        if validation_message := self._get_validation_message(validation_errors):
             if raise_error:
                 raise ValueError(validation_message)
 
-        return self._validation_errors, validation_message
+        return validation_errors, validation_message
 
     @staticmethod
     def _get_validation_message(
