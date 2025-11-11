@@ -78,6 +78,7 @@ def create_tray_shortcut(
     ensure_windows()
 
     target_exe = target_exe or sys.executable
+    print(sys.argv)
     if not os.path.isabs(target_exe):
         target_exe = os.path.abspath(target_exe)
     working_dir = working_dir or os.path.dirname(target_exe)
@@ -86,8 +87,10 @@ def create_tray_shortcut(
     shortcut_path = os.path.join(desktop, shortcut_name)
 
     shortcut = Dispatch("WScript.Shell").CreateShortCut(shortcut_path)
-    shortcut.Targetpath = target_exe
+    shortcut.Targetpath = target_exe.replace("python.exe", "pythonw.exe")
+    shortcut.Arguments = f'"{sys.argv[0]}" --tray'
     shortcut.WorkingDirectory = working_dir
+
     if icon_path:
         shortcut.IconLocation = icon_path
     shortcut.save()
