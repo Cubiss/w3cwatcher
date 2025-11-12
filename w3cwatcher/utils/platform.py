@@ -67,36 +67,6 @@ def open_file(file: Path | str) -> None:
     else:
         subprocess.Popen(["xdg-open", str(file)])
 
-
-# noinspection PyUnresolvedReferences,SpellCheckingInspection
-def create_tray_shortcut(
-    target_exe: Optional[str] = None,
-    shortcut_name: str = f"W3Champions.lnk",
-    working_dir: Optional[str] = None,
-    icon_path: Optional[str] = None,
-) -> str:
-    ensure_windows()
-
-    target_exe = target_exe or sys.executable
-    print(sys.argv)
-    if not os.path.isabs(target_exe):
-        target_exe = os.path.abspath(target_exe)
-    working_dir = working_dir or os.path.dirname(target_exe)
-
-    desktop = shell.SHGetFolderPath(0, shellcon.CSIDL_DESKTOP, None, 0)
-    shortcut_path = os.path.join(desktop, shortcut_name)
-
-    shortcut = Dispatch("WScript.Shell").CreateShortCut(shortcut_path)
-    shortcut.Targetpath = target_exe.replace("python.exe", "pythonw.exe")
-    shortcut.Arguments = f'"{sys.argv[0]}" --tray'
-    shortcut.WorkingDirectory = working_dir
-
-    if icon_path:
-        shortcut.IconLocation = icon_path
-    shortcut.save()
-    return shortcut_path
-
-
 def show_error(message: str) -> None:
     root = tk.Tk()
     root.withdraw()

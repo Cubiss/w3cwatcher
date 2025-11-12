@@ -126,7 +126,6 @@ def load_config() -> Tuple[argparse.Namespace, Config]:
     parser.add_argument("--config", type=str, help="Specify config file (defaults to user file).")
     parser.add_argument("--tray", action="store_true", help="Run as a system tray app")
     parser.add_argument("--check", action="store_true", help="Check currently captured rectangle")
-    parser.add_argument("--shortcut", action="store_true", help="Create a desktop shortcut for Tray")
     Config.fill_arg_parse(parser)
     args = parser.parse_args()
 

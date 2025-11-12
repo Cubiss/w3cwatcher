@@ -8,7 +8,6 @@ from .logging import Logger
 from .monitor import Monitor
 from .state_manager import StateManager
 from .tray import TrayApp
-from .utils.platform import create_tray_shortcut
 
 
 def main():
@@ -27,9 +26,7 @@ def main():
     notifier = DiscordNotifier(config=config.notifications.discord, logger=logger)
     state_manager.add_state_change_listener(notifier.on_monitor_state_change)
 
-    if args.shortcut:
-        create_tray_shortcut(shortcut_name=f"{APP_NAME}.lnk")
-    elif args.check:
+    if args.check:
         monitor.show_debug_image()
     elif args.tray:
         tray = TrayApp.create_singleton(logger=logger, config=config.tray, monitor=monitor)
