@@ -92,7 +92,8 @@ class TrayApp:
         open_file(path)
 
     def run(self):
-        self.start()
+        if self.config.autostart:
+            self.start()
         self._icon.run()
 
     @staticmethod

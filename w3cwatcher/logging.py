@@ -13,10 +13,6 @@ from w3cwatcher.config import APP_NAME, LoggingConfig
 
 
 class RedactingFormatter(logging.Formatter):
-    """
-    Wraps another formatter; post-processes the rendered string with a redactor.
-    """
-
     def __init__(self, base_formatter: logging.Formatter, redactor: Callable[[str], str]):
         super().__init__(fmt=base_formatter._fmt, datefmt=base_formatter.datefmt)
         self._base = base_formatter

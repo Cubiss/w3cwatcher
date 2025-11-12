@@ -5,7 +5,7 @@ from typing import Callable, Optional
 import win32con
 import win32gui
 
-from .geometry import Point, Rect
+from .geometry import Point, Rect, crop_to_aspect_ratio
 from .platform import ensure_windows, GA_ROOT
 
 
@@ -67,26 +67,17 @@ def point_belongs_to_window(hwnd: int, screen_pos: Point) -> bool:
     return this_root == that_root
 
 
-def get_client_top_left_screen(hwnd: int) -> Point:
+def get_client_bbox_in_screen(hwnd: int, aspect_ratio: float = None) -> Rect:
     ensure_windows()
-    if not win32gui.IsWindow(hwnd):
-        raise RuntimeError(f"Invalid window handle: {hwnd}")
-    return win32gui.ClientToScreen(hwnd, (0, 0))
-
-
-def _get_client_rect(hwnd: int) -> Rect:
-    ensure_windows()
-    l, t, r, b = win32gui.GetClientRect(hwnd)
-    return l, t, r, b
-
-
-# Expose a small helper for imaging to use without extra imports.
-def get_client_bbox_in_screen(hwnd: int) -> Rect:
-    ensure_windows()
-    l, t = get_client_top_left_screen(hwnd)
-    cl, ct, cr, cb = _get_client_rect(hwnd)
-    width = cr - cl
-    height = cb - ct
+    l, t = win32gui.ClientToScreen(hwnd, (0, 0))
+    _, _, width, height = win32gui.GetClientRect(hwnd)
     if width <= 0 or height <= 0:
         raise RuntimeError("Window client area is empty (width or height is 0).")
-    return l, t, l + width, t + height
+
+    client_bbox = l, t, l + width, t + height
+
+    if aspect_ratio is not None:
+        client_bbox = crop_to_aspect_ratio(client_bbox, aspect_ratio)
+        pass
+
+    return client_bbox

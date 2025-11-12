@@ -39,13 +39,15 @@ class Monitor:
         self.logger.debug(f"RGB={rgb} ({color_name}) -> in_queue={in_queue}, in_game={in_game}")
 
         img = utils.get_window_image(window_info.hwnd_w3c, self.config.enforced_window_aspect_ratio)
-        img = utils.draw_rectangle(img, window_info.watched_window_pos, size=60, outline="yellow", width=8)
+        img = utils.draw_rectangle(img, window_info.watched_window_pos, size=30, outline="yellow", width=5)
 
         self.logger.info(
             f"""
             size = {img.size}
-            abs_pos = {window_info.watched_window_pos}
-            rel_pos = {(self.config.x_offset_pct, self.config.y_offset_pct)}
+            Point: 
+                screen_pos = {window_info.watched_screen_pos}
+                window_pos = {window_info.watched_window_pos}
+                %_pos = {(self.config.x_offset_pct, self.config.y_offset_pct)}
             RGB={rgb}
             color_name={color_name}
             in_queue={in_queue}
@@ -133,27 +135,27 @@ class Monitor:
                 _wait()
                 continue
 
-            screen_pos, window_pos = utils.hwnd_relative_to_screen_xy(
+            point_screen_pos, point_window_pos = utils.hwnd_relative_to_screen_xy(
                 hwnd_w3c,
                 self.config.x_offset_pct,
                 self.config.y_offset_pct,
                 self.config.enforced_window_aspect_ratio,
             )
 
-            if screen_pos == (0, 0):
+            if point_screen_pos == (0, 0):
                 self.logger.debug(f"{self.config.w3champions_window_title} window is not visible.")
                 _wait()
                 continue
 
-            if not utils.point_belongs_to_window(hwnd_w3c, screen_pos):
+            if not utils.point_belongs_to_window(hwnd_w3c, point_screen_pos):
                 try:
-                    under = win32gui.WindowFromPoint(screen_pos)
+                    under = win32gui.WindowFromPoint(point_screen_pos)
                     title = win32gui.GetWindowText(win32gui.GetAncestor(under, win32con.GA_ROOT))
                     self.logger.debug(
-                        f"[skip] {screen_pos} belongs to '{title}', not {self.config.w3champions_window_title}"
+                        f"[skip] {point_screen_pos} belongs to '{title}', not {self.config.w3champions_window_title}"
                     )
                 except Exception as ex:
-                    self.logger.debug(f"[skip] {screen_pos} could not check pixel ownership: {ex}")
+                    self.logger.debug(f"[skip] {point_screen_pos} could not check pixel ownership: {ex}")
 
                 _wait()
                 continue
@@ -164,8 +166,8 @@ class Monitor:
             return Monitor._WindowInfo(
                 hwnd_w3c=hwnd_w3c,
                 hwnd_warcraft3=hwnd_warcraft3,
-                watched_screen_pos=screen_pos,
-                watched_window_pos=window_pos,
+                watched_screen_pos=point_screen_pos,
+                watched_window_pos=point_window_pos,
             )
 
         return None

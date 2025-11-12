@@ -14,16 +14,15 @@ def hwnd_relative_to_screen_xy(
     y_relative_ttb: float,
     aspect_ratio: float = None,
 ) -> Tuple[Point, Point]:
+
+
     if not (0.0 <= x_relative_ltr <= 100.0 and 0.0 <= y_relative_ttb <= 100.0):
         raise ValueError("x_relative_ltr and y_relative_ttb must be in the 0..100 range")
 
     try:
-        client_bbox = get_client_bbox_in_screen(hwnd)
+        client_bbox = get_client_bbox_in_screen(hwnd, aspect_ratio)
     except RuntimeError:
         return (0,0), (0,0)
-
-    if aspect_ratio is not None:
-        client_bbox = crop_to_aspect_ratio(client_bbox, aspect_ratio)
 
     left, top, right, bottom = client_bbox
     width = right - left
@@ -33,6 +32,7 @@ def hwnd_relative_to_screen_xy(
     y_pixel_offset = int(round(y_relative_ttb * height))
     screen_x = left + x_pixel_offset
     screen_y = top + y_pixel_offset
+
     return (screen_x, screen_y), (x_pixel_offset, y_pixel_offset)
 
 
@@ -41,7 +41,6 @@ def grab_pixel_rgb(screen_x: int, screen_y: int) -> Tuple[int, int, int]:
     img = ImageGrab.grab(bbox=box, include_layered_windows=True, all_screens=True)
     # noinspection PyTypeChecker
     return img.getpixel((0, 0))
-
 
 def get_window_image(hwnd: int, aspect_ratio: Optional[float] = None) -> Image.Image:
     client_bbox = get_client_bbox_in_screen(hwnd)

@@ -20,9 +20,7 @@ def crop_to_aspect_ratio(rect: Rect, aspect_ratio: float) -> Rect:
 
     if current_ratio > aspect_ratio:
         new_w = int(round(height * aspect_ratio))
-        new_l = l + (width - new_w) // 2
-        return new_l, t, new_l + new_w, b
+        return l, t, l + new_w, b
     else:
         new_h = int(round(width / aspect_ratio))
-        new_t = t + (height - new_h) // 2
-        return l, new_t, r, new_t + new_h
+        return l, t, r, t + new_h
