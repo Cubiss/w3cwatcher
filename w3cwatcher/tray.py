@@ -13,7 +13,7 @@ import pystray
 
 from .config import APP_NAME, TrayConfig
 from .monitor import Monitor
-from .state_manager import STATE_WAITING, STATE_DISABLED, STATE_IN_QUEUE
+from .state_manager import STATE_WAITING, STATE_DISABLED, STATE_IN_QUEUE, STATE_IN_GAME
 from .utils import open_file
 from .utils.config_base import get_config_file
 
@@ -41,7 +41,8 @@ class TrayApp:
             pystray.MenuItem(
                 "Tools",
                 pystray.Menu(
-                    pystray.MenuItem("Check", self._check),
+                    pystray.MenuItem("Check capture area", self._check),
+                    pystray.MenuItem("Test game start", self._mock_game_start),
                     pystray.MenuItem("Log", self._log),
                     pystray.MenuItem("Settings", self._settings),
                 ),
@@ -90,6 +91,10 @@ class TrayApp:
         path = get_config_file(path=self.config.get_file_path(), user_config=True, app_name=APP_NAME)
         self.logger.info(f"Opening {path}")
         open_file(path)
+
+    def _mock_game_start(self, _):
+        #
+        self.monitor.state_manager.update_state(STATE_IN_GAME)
 
     def run(self):
         if self.config.autostart:
