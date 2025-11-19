@@ -89,7 +89,7 @@ class TelegramConfig(ConfigBase):
             return "Telegram bot token cannot be empty."
         if ":" not in value:
             return "Invalid Telegram bot token format."
-        return value
+        return None
 
     @staticmethod
     def _validate_chat_id(value):
@@ -99,7 +99,7 @@ class TelegramConfig(ConfigBase):
             int(value)
         except:
             return "Telegram chat_id must be an integer or numeric string."
-        return value
+        return None
 
     enabled: bool = field(
         default=False,
@@ -125,7 +125,6 @@ class TelegramConfig(ConfigBase):
 
     debounce: int = field(
         default=60,
-        arg="--debounce",
         help_text="Minimum seconds between Telegram notifications.",
     )
 
@@ -174,8 +173,9 @@ def load_config() -> Tuple[argparse.Namespace, Config]:
     default_config_file = get_config_file(
         user_config=True, filename="config.default.toml", app_name=APP_NAME
     )
-    if not default_config_file.exists():
-        config.save(default_config_file, include_defaults=True, comment='help_text')
+
+    # keep defaults file up to date
+    config.save(default_config_file, include_defaults=True, comment='help_text')
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, help="Specify config file (defaults to user file).")

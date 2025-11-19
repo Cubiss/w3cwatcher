@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 
 import tomlkit
@@ -205,6 +206,7 @@ class ConfigBase:
         self._validation_errors[fld.name] = errors
         if ConfigBase.VALIDATION_ERRORS_ON_SETATTR and len(errors):
             msg = "\n".join(f"- {m}" for m in errors)
+            self.validate_field(fld, value)
             raise ValueError(f"Validation failed:\n{msg}")
 
         old = getattr(self, name, None)
@@ -218,7 +220,11 @@ class ConfigBase:
         validators = fld.metadata.get(FIELD_VALIDATORS, [])
         errors = []
         for v in validators:
-            errors += v(value)
+            validation_error = v(value)
+            if isinstance(validation_error, str):
+                errors += [validation_error]
+            elif validation_error:
+                errors += validation_error
         if raise_error and len(errors):
             msg = "\n".join(f"- {m}" for m in errors)
             raise ValueError(f"Validation failed:\n{msg}")
@@ -271,15 +277,18 @@ class ConfigBase:
                 continue
 
             if arg == AUTO_ARG:
-                arg = "--" + name.replace("_", "-")
+                arg_name = name.replace("_", "-")
+                if namespace:
+                    arg = f"--{namespace}.{arg_name}"
+                else:
+                    arg = f"--{arg_name}"
 
-            name = name
             f_type = cls._get_field_type(f)
 
             if cls._is_config(f):
                 f.default_factory.fill_arg_parse(
                     group,
-                    namespace=f"{namespace}.{name}" if arg == AUTO_ARG else arg,
+                    namespace=f"{namespace}.{name}" if arg == AUTO_ARG else arg.lstrip('-'),
                     description=help_text,
                 )
             elif f_type is bool:
@@ -471,7 +480,8 @@ class ConfigBase:
                 cfg: ConfigBase = getattr(self, f.name)
                 errors, _ = cfg.validate_all(raise_error=False)
                 if len(errors) > 0:
-                    validation_errors[f.name], _ = cfg.validate_all(raise_error=False)
+                    validation_errors[f.name] = errors
+                continue
 
             errors = self.validate_field(f, getattr(self, f.name, None), raise_error=False)
             if len(errors) > 0:
@@ -496,7 +506,7 @@ class ConfigBase:
                 for error in errors:
                     message += f"{prefix}  - {error}\n"
             elif isinstance(errors, dict):
-                message += ConfigBase._get_validation_message(validation_errors, prefix=prefix + "  ")
+                message += ConfigBase._get_validation_message(errors, prefix=prefix + "  ")
             else:
                 raise ValueError(
                     f"Unexpected type: ({type(errors)}) '{errors}'",

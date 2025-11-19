@@ -93,7 +93,7 @@ class TrayApp:
         open_file(path)
 
     def _mock_game_start(self, _):
-        #
+        self.monitor.state_manager.update_state(STATE_IN_QUEUE)
         self.monitor.state_manager.update_state(STATE_IN_GAME)
 
     def run(self):

@@ -15,14 +15,7 @@ class DiscordNotifier:
         self.config = config
         self.logger = logger
         self._discord_webhook_last_sent = 0.0
-
-
         self.config.validate_all()
-        # noinspection PyBroadException
-        try:
-            logger.add_redactor(self.create_discord_webhook_redactor(config.webhook_url))
-        except Exception:
-            logger.warning("Failed to add discord url redactor.")
 
     def _send_discord_webhook(self, content: str, embed_fields: Optional[Dict[str, Any]] = None) -> None:
         now = time.monotonic()

@@ -53,6 +53,7 @@ Icon color:
 
 ```toml config.toml
 [notifications.discord]
+enabled = true
 webhook_url = "https://discord.com/api/webhooks/.../..."
 ```
 
@@ -68,5 +69,6 @@ webhook_url = "https://discord.com/api/webhooks/.../..."
 8.  Add or update the Telegram section:
 ```toml
 [notifications.telegram]
+enabled = true
 bot_token = "123456789:ABCdefGhIjkLmNoPQRstuVWxyZ"
 chat_id = "123456789"

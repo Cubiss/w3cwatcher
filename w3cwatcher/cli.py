@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import tomlkit
+from w3cwatcher.utils import show_error
 
-from .config import load_config, APP_NAME
+from .config import load_config
 from .discord_notifier import DiscordNotifier
 from .logging import Logger
 from .monitor import Monitor
@@ -13,30 +14,38 @@ from .tray import TrayApp
 
 def main():
     args, config = load_config()
-    logger = Logger.from_config(config.logging)
+    tray = args.tray
 
-    doc = config.as_toml(include_defaults=True, comment="source")
-    logger.debug(tomlkit.dumps(doc))
+    try:
+        logger = Logger.from_config(config.logging)
 
-    errors, message = config.validate_all(raise_error=False)
-    if len(errors) > 0:
-        logger.warning(message)
 
-    state_manager = StateManager(logger=logger)
-    monitor = Monitor(logger=logger, config=config.monitor, state_manager=state_manager)
+        doc = config.as_toml(include_defaults=True, comment="source")
+        logger.debug(tomlkit.dumps(doc))
 
-    if config.notifications.discord.enabled:
-        notifier = DiscordNotifier(config=config.notifications.discord, logger=logger)
-        state_manager.add_state_change_listener(notifier.on_monitor_state_change)
+        errors, message = config.validate_all(raise_error=False)
+        if len(errors) > 0:
+            logger.debug(message)
 
-    if config.notifications.telegram.enabled:
-        notifier = TelegramNotifier(config=config.notifications.telegram, logger=logger)
-        state_manager.add_state_change_listener(notifier.on_monitor_state_change)
+        state_manager = StateManager(logger=logger)
+        monitor = Monitor(logger=logger, config=config.monitor, state_manager=state_manager)
 
-    if args.check:
-        monitor.show_debug_image()
-    elif args.tray:
-        tray = TrayApp.create_singleton(logger=logger, config=config.tray, monitor=monitor)
-        tray.run()
-    else:
-        monitor.run()
+        if config.notifications.discord.enabled:
+            notifier = DiscordNotifier(config=config.notifications.discord, logger=logger)
+            state_manager.add_state_change_listener(notifier.on_monitor_state_change)
+
+        if config.notifications.telegram.enabled:
+            notifier = TelegramNotifier(config=config.notifications.telegram, logger=logger)
+            state_manager.add_state_change_listener(notifier.on_monitor_state_change)
+
+        if args.check:
+            monitor.show_debug_image()
+        elif args.tray:
+            tray = TrayApp.create_singleton(logger=logger, config=config.tray, monitor=monitor)
+            tray.run()
+        else:
+            monitor.run()
+    except Exception as ex:
+        if tray:
+            show_error(str(ex))
+        raise
