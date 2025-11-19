@@ -42,7 +42,8 @@ def main():
             monitor.show_debug_image()
         elif args.tray:
             tray = TrayApp.create_singleton(logger=logger, config=config.tray, monitor=monitor)
-            tray.run()
+            if tray:
+                tray.run()
         else:
             monitor.run()
     except Exception as ex:
