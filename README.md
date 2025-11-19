@@ -66,9 +66,11 @@ webhook_url = "https://discord.com/api/webhooks/.../..."
 5.  BotFather will reply with your **Bot Token**, for example: `123456789:ABCdefGhIjkLmNoPQRstuVWxyZ`. This is your `bot_token` 
 6.  In Telegram, search for **`@userinfobot`**  
 7.  Start it, and it will immediately display your **Telegram user ID**. This is your `chat_id`
-8.  Add or update the Telegram section:
+8.  Run `w3cwatcher --settings` or click `Tools/Settings` in Tray context menu to open the config file
+9.  Add or update the Telegram section:
 ```toml
 [notifications.telegram]
 enabled = true
 bot_token = "123456789:ABCdefGhIjkLmNoPQRstuVWxyZ"
 chat_id = "123456789"
+```
