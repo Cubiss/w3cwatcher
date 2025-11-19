@@ -48,16 +48,21 @@ class MonitorConfig(ConfigBase):
     reduced_poll_s: int = field(default=5, help_text="Reduced polling rate when idle (seconds).")
 
 
-def _validate_discord_webhook(url):
-    if url is None:
-        return ["You must set discord webhook url first."]
-    elif not re.match(r"^https://(discord\.com)/api/webhooks/\d+/[\w-]+$", url):
-        return ["Invalid webhook URL format."]
-    else:
-        return []
-
-
 class DiscordConfig(ConfigBase):
+    @staticmethod
+    def _validate_discord_webhook(url):
+        if url is None:
+            return ["You must set discord webhook url first."]
+        elif not re.match(r"^https://(discord\.com)/api/webhooks/\d+/[\w-]+$", url):
+            return ["Invalid webhook URL format."]
+        else:
+            return []
+
+    enabled: bool = field(
+        default=False,
+        help_text="Whether to enable Discord notifications.",
+    )
+
     match_started_message: str = field(
         default="Match found!",
         help_text="Discord message content to send on match found.",
@@ -73,6 +78,55 @@ class DiscordConfig(ConfigBase):
         default=60,
         arg="--debounce",
         help_text="Minimum seconds between Discord webhook notifications.",
+    )
+
+
+
+class TelegramConfig(ConfigBase):
+    @staticmethod
+    def _validate_telegram_token(value):
+        if not value:
+            return "Telegram bot token cannot be empty."
+        if ":" not in value:
+            return "Invalid Telegram bot token format."
+        return value
+
+    @staticmethod
+    def _validate_chat_id(value):
+        if not value:
+            return "Telegram chat_id cannot be empty."
+        try:
+            int(value)
+        except:
+            return "Telegram chat_id must be an integer or numeric string."
+        return value
+
+    enabled: bool = field(
+        default=False,
+        help_text="Whether to enable Telegram notifications.",
+    )
+
+    match_started_message: str = field(
+        default="Match found!",
+        help_text="Telegram message content to send on match found."
+    )
+
+    bot_token: str = field(
+        default=None,
+        help_text="Telegram Bot API token from BotFather.",
+        validators=[_validate_telegram_token],
+    )
+
+    chat_id: str = field(
+        default=None,
+        help_text="Telegram chat ID to send messages to.",
+        validators=[_validate_chat_id],
+    )
+
+    debounce: int = field(
+        default=60,
+        arg="--debounce",
+        help_text="Minimum seconds between Telegram notifications.",
     )
 
 
@@ -99,6 +153,7 @@ class TrayConfig(ConfigBase):
 
 class NotificationsConfig(ConfigBase):
     discord: DiscordConfig = field(default_factory=DiscordConfig)
+    telegram: TelegramConfig = field(default_factory=TelegramConfig)
 
 
 class Config(ConfigBase):

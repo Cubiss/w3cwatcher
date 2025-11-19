@@ -164,9 +164,26 @@ class ConfigBase:
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+
+        hints = get_type_hints(cls)
+        for field in fields(cls):
+            if field.default is not MISSING:
+                continue
+            if field.default_factory is not MISSING:
+                continue
+
+            name = field.name
+            annotation = hints.get(name)
+
+            if isinstance(annotation, type) and issubclass(annotation, ConfigBase):
+                new_field = field.replace(default_factory=annotation)
+                setattr(cls, name, new_field)
+
         if cls not in ConfigBase._initialized:
             ConfigBase._initialized.add(cls)
             dataclass()(cls)
+
+
 
     def __post__init__(self):
         self._init_tracking()

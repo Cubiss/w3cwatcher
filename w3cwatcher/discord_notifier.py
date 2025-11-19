@@ -1,5 +1,4 @@
 import json
-import re
 import time
 from datetime import datetime
 from typing import Optional, Dict, Any, Callable
@@ -76,22 +75,3 @@ class DiscordNotifier:
             )
 
         self._send_discord_webhook("", embed)
-
-    @staticmethod
-    def create_discord_webhook_redactor(url: str, *, mask: str = "****") -> Callable[[str], str]:
-        m = re.match(
-            r"^https://discord\.com/api/webhooks/(?P<webhook_id>\d+)/(?P<webhook_token>[A-Za-z0-9._-]+)$",
-                 url)
-        if not m:
-            expected_format = "https://discord.com/api/webhooks/{webhook_id}/{webhook_token}"
-            raise ValueError(f"Expected format: {expected_format}")
-
-        webhook_id = m.group("webhook_id")
-        webhook_token = m.group("webhook_token")
-
-        def redact(text: str) -> str:
-            if not text:
-                return text
-            return text.replace(webhook_token, mask).replace(webhook_id, mask)
-
-        return redact

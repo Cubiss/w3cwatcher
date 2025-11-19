@@ -5,26 +5,11 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional, Dict
+from typing import Optional, Dict
 
 from platformdirs import user_log_dir
 
 from w3cwatcher.config import APP_NAME, LoggingConfig
-
-
-class RedactingFormatter(logging.Formatter):
-    def __init__(self, base_formatter: logging.Formatter, redactor: Callable[[str], str]):
-        super().__init__(fmt=base_formatter._fmt, datefmt=base_formatter.datefmt)
-        self._base = base_formatter
-        self._redact = redactor
-
-    def format(self, record: logging.LogRecord) -> str:
-        # noinspection PyBroadException
-        try:
-            rendered = self._base.format(record)
-            return self._redact(rendered)
-        except Exception:
-            return "[log redaction failed: sensitive data suppressed]"
 
 
 class Logger:
@@ -102,16 +87,7 @@ class Logger:
             ch._w3cwatcher_console = True
             self.logger.addHandler(ch)
 
-    def add_redactor(self, redactor: Callable[[str], str]) -> None:
-        """
-        Apply a redactor on top of each handler's formatter.
-        """
-        for handler in self.logger.handlers:
-            base = handler.formatter or self._base_fmt
-            handler.setFormatter(RedactingFormatter(base, redactor))
-
     # ---------- internals ----------
-
     def _add_file_handlers(self) -> None:
         """
         Two file handlers:
