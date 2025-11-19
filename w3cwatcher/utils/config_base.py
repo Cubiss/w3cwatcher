@@ -154,7 +154,7 @@ def field(
 
 @dataclass
 class ConfigBase:
-    VALIDATION_ERRORS_ON_SETATTR = True
+    VALIDATION_ERRORS_ON_SETATTR = False
 
     _initialized: ClassVar[Set] = set()
 
