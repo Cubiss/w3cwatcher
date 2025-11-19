@@ -63,7 +63,7 @@ webhook_url = "https://discord.com/api/webhooks/.../..."
 2.  Search for **`@BotFather`** and start a chat
 3.  Create a new bot by sending: `/newbot`
 4.  Choose a **name** and a **username** (the username must end with `bot`, e.g. `w3cwatcher_notifier_bot`)
-5.  BotFather will reply with your **Bot Token**, for example: `123456789:ABCdefGhIjkLmNoPQRstuVWxyZ`. This is your `bot_token` 
+5.  BotFather will reply with your **Bot Token** (`123456789:ABCdefGhIjkLmNoPQRstuVWxyZ`, your `bot_token`) and a link to the bot (open it and tap start). 
 6.  In Telegram, search for **`@userinfobot`**  
 7.  Start it, and it will immediately display your **Telegram user ID**. This is your `chat_id`
 8.  Run `w3cwatcher --settings` or click `Tools/Settings` in Tray context menu to open the config file
