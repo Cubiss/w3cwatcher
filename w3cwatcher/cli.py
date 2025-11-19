@@ -7,6 +7,7 @@ from .discord_notifier import DiscordNotifier
 from .logging import Logger
 from .monitor import Monitor
 from .state_manager import StateManager
+from .telegram_notifier import TelegramNotifier
 from .tray import TrayApp
 
 
@@ -23,8 +24,14 @@ def main():
 
     state_manager = StateManager(logger=logger)
     monitor = Monitor(logger=logger, config=config.monitor, state_manager=state_manager)
-    notifier = DiscordNotifier(config=config.notifications.discord, logger=logger)
-    state_manager.add_state_change_listener(notifier.on_monitor_state_change)
+
+    if config.notifications.discord.enabled:
+        notifier = DiscordNotifier(config=config.notifications.discord, logger=logger)
+        state_manager.add_state_change_listener(notifier.on_monitor_state_change)
+
+    if config.notifications.telegram.enabled:
+        notifier = TelegramNotifier(config=config.notifications.telegram, logger=logger)
+        state_manager.add_state_change_listener(notifier.on_monitor_state_change)
 
     if args.check:
         monitor.show_debug_image()

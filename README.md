@@ -66,10 +66,25 @@ options:
 6.  Name it and pick the channel
 7.  Click **Copy Webhook URL**
 8.  Run `w3cwatcher --settings` or click `Tools/Settings` in Tray context menu
-9.  Paste your url into `discord_webhook_url` field
+9.  Paste your url into `webhook_url` field
 
 The config file should look like this:
 ```toml config.toml
 [notifications.discord]
 webhook_url = "https://discord.com/api/webhooks/.../..."
 ```
+
+## Setup a Telegram Bot
+
+1. **Open Telegram**
+2. Search for **`@BotFather`** and start a chat.
+3. Create a new bot by sending: `/newbot`
+4. Choose a **name** and a **username** (the username must end with `bot`, e.g. `w3cwatcher_notifier_bot`).
+5. BotFather will reply with your **Bot Token**, for example: `123456789:ABCdefGhIjkLmNoPQRstuVWxyZ`. This is your `bot_token`. 
+6. In Telegram, search for **`@userinfobot`**  
+7. Start it, and it will immediately display your **Telegram user ID**. This is your `chat_id`.  
+8. Add or update the Telegram section:
+```toml
+[notifications.telegram]
+bot_token = "123456789:ABCdefGhIjkLmNoPQRstuVWxyZ"
+chat_id = "123456789"
