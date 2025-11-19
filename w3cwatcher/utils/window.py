@@ -67,6 +67,15 @@ def point_belongs_to_window(hwnd: int, screen_pos: Point) -> bool:
     return this_root == that_root
 
 
+def is_shown(hwnd: int):
+    if not hwnd:
+        return False
+    _, _, width, height = win32gui.GetClientRect(hwnd)
+    if width <= 0 or height <= 0:
+        return False
+    return True
+
+
 def get_client_bbox_in_screen(hwnd: int, aspect_ratio: float = None) -> Rect:
     ensure_windows()
     l, t = win32gui.ClientToScreen(hwnd, (0, 0))

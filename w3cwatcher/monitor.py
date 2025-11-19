@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import win32gui
 import win32con
+from w3cwatcher.utils import is_shown
 
 from . import utils
 from .logging import Logger
@@ -32,7 +33,7 @@ class Monitor:
             self.logger.error("Failed to get W3C window info.")
             return
 
-        in_game = window_info.hwnd_warcraft3
+        in_game = is_shown(window_info.hwnd_warcraft3)
         rgb = utils.grab_pixel_rgb(*window_info.watched_screen_pos)
         color_name = utils.name_color(*rgb)
         in_queue = color_name == self.config.in_queue_color
@@ -81,7 +82,7 @@ class Monitor:
                     time.sleep(poll_rate_s)
                     continue
 
-                in_game = window_info.hwnd_warcraft3 is not None
+                in_game = is_shown(window_info.hwnd_warcraft3)
                 rgb = utils.grab_pixel_rgb(*window_info.watched_screen_pos)
                 color_name = utils.name_color(*rgb)
                 in_queue = color_name == self.config.in_queue_color
@@ -147,7 +148,8 @@ class Monitor:
                 _wait()
                 continue
 
-            if not utils.point_belongs_to_window(hwnd_w3c, point_screen_pos):
+            if not utils.point_belongs_to_window(hwnd_w3c, point_screen_pos)\
+                    and not utils.point_belongs_to_window(hwnd_warcraft3, point_screen_pos):
                 try:
                     under = win32gui.WindowFromPoint(point_screen_pos)
                     title = win32gui.GetWindowText(win32gui.GetAncestor(under, win32con.GA_ROOT))
