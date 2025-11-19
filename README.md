@@ -49,7 +49,7 @@ Icon color:
 6.  Name it and pick the channel
 7.  Click **Copy Webhook URL**. This is your `webhook_url`.
 8.  Run `w3cwatcher --settings` or click `Tools/Settings` in Tray context menu to open the config file
-9.  Add or update the Telegram section:
+9.  Add or update the Discord section:
 
 ```toml config.toml
 [notifications.discord]
